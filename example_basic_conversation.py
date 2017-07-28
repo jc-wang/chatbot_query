@@ -77,7 +77,7 @@ if __name__ == "__main__":
     trans_states = ['Greetings name']
     trans_storename = TransitionConversationStates(trans_states, cond_trans)
 
-    def storer_name(h):
+    def storer_name(h, m):
         h.profile_user.profile['username'] =\
             h.query_past_messages(sender='user', tag='name')[0]['message']
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     trans_states = ['Ensure name']
     trans_storename = TransitionConversationStates(trans_states, cond_trans)
 
-    def storer_tempname(h):
+    def storer_tempname(h, m):
         h.profile_user.profile['nameprovided'] =\
             h.query_past_messages(sender='user', tag='name')[0]['message']
     states.append(StoringState('Store tempname', storer_tempname,
@@ -129,9 +129,9 @@ if __name__ == "__main__":
                                  transition=trans_hello)]
 
     ### Checker username
-    bool_cond = lambda x: int(x)
+    bool_cond = lambda x: int(x['check'])
     trans = TransitionConversationStates(['Ask name', 'Say hello'], bool_cond)
-    checker_username = lambda h: 'username' in h.profile_user.profile
+    checker_username = lambda h, m: {'check': 'username' in h.profile_user.profile}
     check_username = CheckerState('if_username', checker_username, trans)
 
     ### Conversation setting
@@ -162,5 +162,6 @@ if __name__ == "__main__":
 
     handler_db = HandlerConvesationDB()
     handler_ui = TerminalUIHandler(handler_db, general_conv)
+#    handler_ui = FlaskUIHandler(handler_db, general_conv)
 
     handler_ui.run()
