@@ -4,6 +4,7 @@
 """
 
 import time
+from chatbot.ui.flask_utils import run_flask_app_conversation
 
 
 class HandlerConvesationUI(object):
@@ -66,3 +67,25 @@ class TerminalUIHandler(HandlerConvesationUI):
             response = {'message': response}
         return response
 
+
+class FlaskUIHandler(HandlerConvesationUI):
+
+    def __init__(self, handler_db, conversation_machine):
+        super().__init__(handler_db, conversation_machine)
+
+    def ask(self, message={}):
+        while message is not None:
+            self.handler_db.message_in(message,
+                                       self.conversation_machine.next_tags)
+            answer = self.conversation_machine.get_message(self.handler_db,
+                                                           message)
+            if answer is None:
+                break
+            self.handler_db.message_out(answer,
+                                        self.conversation_machine.next_tags)
+            wait_time = min([len(answer['message'])*1/15., 3])
+            time.sleep(wait_time)
+            return answer
+
+    def run(self, message={}):
+        run_flask_app_conversation(self.ask)
