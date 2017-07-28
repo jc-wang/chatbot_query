@@ -8,19 +8,41 @@ Some auxiliar functions to help carry out some tasks.
 
 import copy
 
+## Parameters
+yes = ['y', 'yes', 'sure', 'exactly']
+no = ['n', 'no', 'not']
+
 
 def yes_no_answer(message):
     """Condition function for yes and no answers.
     Yes: 1, No: 0
     """
-    #no = ['n', 'no', 'not']
+    #
     response = message['message']
-    yes = ['y', 'yes']
     split_response = response.lower().split(' ')
     affirmative = False
     for st in yes:
         affirmative = affirmative or (st in split_response)
     return int(affirmative)
+
+
+def create_yes_no_question(default_val):
+
+    if default_val == 'yes':
+        lista = no
+    else:
+        lista = yes
+
+    def yes_no_question(message):
+        """Default: 0
+        """
+        response = message['message']
+        split_response = response.lower().split(' ')
+        affirmative = False
+        for st in lista:
+            affirmative = affirmative or (st in split_response)
+        return int(affirmative)
+    return yes_no_question
 
 
 def create_probsplitter_condition(splits, value_path):
