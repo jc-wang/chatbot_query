@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import functools
 
+from os.path import isfile
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 #from sklearn.feature_extraction.text import CountVectorizer
@@ -12,8 +14,12 @@ from sklearn.neighbors import NearestNeighbors
 
 class DataBaseAPI(object):
 
-    def __init__(self, data_path, type_vars, responses_formatter):
-        self.data = pd.read_csv(data_path, index_col=0)
+    def __init__(self, data_info, type_vars, responses_formatter):
+        if isinstance(data_info, pd.DataFrame):
+            self.data = data_info
+        else:
+            assert(isfile(data_info))
+            self.data = pd.read_csv(data_info, index_col=0)
 
         ## Type vars: dictionary with 'main_var', 'cat_vars', 'label_var'
         assert(all([v in type_vars
@@ -99,11 +105,11 @@ class DataBaseAPI(object):
                                                pos_q1)]
         return queried0
 
-    def get(self, ids):
-        assert(len(ids) == 1)
-        d = dict(zip(['productname', 'brand'], self.data.loc[ids].as_matrix()))
-        row = copy.copy(self.description).format(**d)
-        return row
+#    def get(self, ids):
+#        assert(len(ids) == 1)
+#        d = dict(zip(['productname', 'brand'], self.data.loc[ids].as_matrix()))
+#        row = copy.copy(self.description).format(**d)
+#        return row
 
     def get_label(self, ids):
         labels = self.data.loc[self.data.index[ids['main_var'][0]],
