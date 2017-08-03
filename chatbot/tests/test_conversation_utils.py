@@ -112,8 +112,9 @@ class Test_Choosers(unittest.TestCase):
                                    for r in self.candidate_messages]
 
         for e in self.candidate_messages:
-            e.update({'query_idxs': np.random.random(10), 'collection': False,
-                      'selector_types': np.random.random(2), 'query': 0})
+            e.update({'query': {'query_idxs': np.random.random(10)},
+                      'collection': False,
+                      'selector_types': np.random.random(2)})
 
     def check_general_chooser(self, chooser, collection=True):
         ## Checking individual messages

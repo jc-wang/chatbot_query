@@ -296,6 +296,7 @@ class Test_ConversationStateMachine(unittest.TestCase):
         db_handlers = mock.Mock()
         db_handlers.configure_mock(databases={'db': dbapi})
         db_handlers.configure_mock(profile_user=profile_user)
+        db_handlers.get_last_query = lambda: {}
         self.db_handlers = db_handlers
 
         ## Definition of possible inputs
