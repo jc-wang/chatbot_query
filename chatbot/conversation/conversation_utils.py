@@ -190,7 +190,10 @@ class QuerierSizeDrivenChooser(BaseChooser):
 
     @formatting_base_response
     def choose(self, message):
-        i = self.cond(len(message[self.query_var]))
+        if self.query_var in message:
+            i = self.cond(len(message[self.query_var]))
+        else:
+            i = self.cond(len(message['query'][self.query_var]))
         filtered_candidates = [q for q in self.candidates
                                if q[self.type_var] == i]
         return filtered_candidates[np.random.randint(len(filtered_candidates))]
@@ -215,7 +218,11 @@ class QuerierSplitterChooser(BaseChooser):
 
     def choose_tag(self, message):
         # TODO: Extend
-        i = self.cond(message['query'][self.query_var])
+        print(message)
+        if isinstance(message['query'], dict):
+            i = self.cond(message['query'][self.query_var])
+        else:
+            i = self.cond(message['query'])
         return i
 
 
