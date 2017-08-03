@@ -16,9 +16,9 @@ import copy
 from os.path import isfile
 import numpy as np
 
-from chatbot.conversation import TalkingState, SequencialChooser,\
+from chatbot.conversation import TalkingState, SequentialChooser,\
     TransitionConversationStates, ConversationStateMachine, QuerierState,\
-    QuerierSplitterChooser, CheckerState, StoringState, clean_message
+    QuerierSplitterChooser, CheckerState, StoringState
 
 from chatbot.aux_functions import create_fixed_condition, splitter,\
     yes_no_answer
@@ -31,8 +31,8 @@ HELLO_SENTENCES =\
     ["Hi! Nice to see you. I'm here to help you finding products."]
 
 QUESTIONS_SALUT_DB =\
-    ["Are you interested in something new?",
-     "Do you want me to find something?",
+    ["Are you interested in something new? Which products?",
+     "Do you want me to find something? Which products?",
      "What are the products you are interested in?"]
 QUESTIONS_QUERY_DB =\
     [{'message': 'I have not find anything for you.', 'level_query': 4},
@@ -133,9 +133,10 @@ if __name__ == "__main__":
     cond_hellodb = create_fixed_condition(0)
     trans_states = ['Querier DB']
     trans_hellodb = TransitionConversationStates(trans_states, cond_hellodb)
-    chooser_askquery = SequencialChooser(q_hello_db)
+    chooser_askquery = SequentialChooser(q_hello_db)
     states.append(TalkingState('Hello DB', chooser_askquery, None,
-                               tags=['query'], transition=trans_hellodb))
+                               tags=['query'], transition=trans_hellodb,
+                               shadow=False))
 
     def querier_f(h, m):
 #        m = h.query_past_messages(sender='user', tag='query')[0]['message']
@@ -190,8 +191,7 @@ if __name__ == "__main__":
         m2['query']['query_idxs']['main_var'] =\
             np.array([np.array([], dtype=np.int64)])
         h.store_query(m2)
-        new_m = clean_message(m2)
-        return new_m
+        return m
     cond_trans = create_fixed_condition(0)
     trans_states = ['ReAsker']
     trans_storename = TransitionConversationStates(trans_states, cond_trans)
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     cond_trans = create_fixed_condition(0)
     trans_states = ['Querier DB']
     trans_reask = TransitionConversationStates(trans_states, cond_trans)
-    chooser_end = SequencialChooser(q_reasker)
+    chooser_end = SequentialChooser(q_reasker)
     states.append(TalkingState('ReAsker', chooser_end,
                                transition=trans_reask))
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     q_end_explore = [{'message': m} for m in QUESTIONS_END_EXPLORE]
     trans_states = ['Closing Check', 'Querier DB']
     trans_askmore = TransitionConversationStates(trans_states, yes_no_answer)
-    chooser_end = SequencialChooser(q_end_explore)
+    chooser_end = SequentialChooser(q_end_explore)
     states.append(TalkingState('Keep Trying', chooser_end,
                                transition=trans_askmore))
 
@@ -244,22 +244,27 @@ if __name__ == "__main__":
     cond_hello = create_fixed_condition(0)
     trans_states = ['Query Conversation']
     trans_hello = TransitionConversationStates(trans_states, cond_hello)
-    chooser_hello = SequencialChooser(q_hello)
+    chooser_hello = SequentialChooser(q_hello)
     hello_state = TalkingState('Hello', chooser_hello, None,
-                               transition=trans_hello)
+                               shadow=True)
     hello_conv = ConversationStateMachine('Hello', [hello_state], 'Hello',
-                                          ['Hello'])
+                                          ['Hello'], transition=trans_hello)
     ## Define a yes_no final asker
     q_end_sure = [{'message': m} for m in QUESTIONS_END_SURE]
     trans_states = ['Say goodbye', 'Query Conversation']
 
     trans_askcont = TransitionConversationStates(trans_states, yes_no_answer)
-    chooser_end = SequencialChooser(q_end_sure)
+    chooser_end = SequentialChooser(q_end_sure)
     final_ask = TalkingState('Final Asker', chooser_end,
                              transition=trans_askcont)
+    final_ask_conv = ConversationStateMachine('Final Asker', [final_ask],
+                                              'Final Asker', ['Final Asker'],
+                                              transition=trans_askcont)
     ## Say goodbye
     q_goodbye = [{'message': m} for m in QUESTIONS_GOODBYE]
-    state_goodbye = TalkingState('Say goodbye', SequencialChooser(q_goodbye))
+    state_goodbye = TalkingState('Say goodbye', SequentialChooser(q_goodbye))
+    goodbye_conv = ConversationStateMachine('Say goodbye', [state_goodbye],
+                                            'Say goodbye', ['Say goodbye'])
 
     ### Conversation Query
     trans_states = ['Final Asker', 'Say goodbye']
@@ -271,7 +276,7 @@ if __name__ == "__main__":
     ############################### Conversation ##############################
 
     end_states = ['Say goodbye']
-    conv_states = [hello_state, query_conv, final_ask, state_goodbye]
+    conv_states = [hello_conv, query_conv, final_ask_conv, goodbye_conv]
     conversa = ConversationStateMachine('Conversation', conv_states,
                                         'Hello', end_states)
 

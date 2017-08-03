@@ -156,8 +156,11 @@ if __name__ == "__main__":
     bool_cond = lambda x: int(x['query']['check'])
 
     trans = TransitionConversationStates(['Ask name', 'Say hello'], bool_cond)
-    checker_username =\
-        lambda h, m: {'check': 'username' in h.profile_user.profile}
+#    checker_username =\
+#        lambda h, m: {'check': 'username' in h.profile_user.profile}
+
+    def checker_username(h, m):
+        return {'query': {'check': 'username' in h.profile_user.profile}}
     check_username = CheckerState('if_username', checker=checker_username,
                                   transition=trans)
     check_user_conv = ConversationStateMachine('if_username_conv',
