@@ -43,9 +43,11 @@ class HandlerConvesationDB(object):
             self.databases = {'db': databases}
 
     def store_query(self, message, database='db'):
-        query_info = self.databases['db'].get_reflection_query(message)
-        query_info['time'] = time.strftime(datetime_format)
-        self.queriesDB.append(query_info)
+        if 'query' in message:
+            if message['query'] is not None:
+                query_info = self.databases['db'].get_reflection_query(message)
+                query_info['time'] = time.strftime(datetime_format)
+                self.queriesDB.append(query_info)
 
     def message_in(self, message, tags=None):
         ## Message handling
@@ -97,3 +99,7 @@ class HandlerConvesationDB(object):
                     retrieved.append(m)
             i += 1
         return retrieved
+
+    def get_last_query(self):
+        ## Temporal
+        return {}

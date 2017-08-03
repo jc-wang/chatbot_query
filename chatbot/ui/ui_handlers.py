@@ -24,20 +24,24 @@ class HandlerConvesationUI(object):
             conversation_machine.set_machine()
         self.conversation_machine = conversation_machine
 
-#    def _reflection_information(self, message, pre_message):
-#        for key in pre_message:
-#            if key not in ['message', 'from', 'time']:
-#                message[key] = pre_message[key]
-#        return message
+    def _reflection_information(self, message, pre_message):
+        if 'answer_status' in pre_message:
+            if pre_message['answer_status']:
+                for key in pre_message:
+                    if key not in ['message', 'from', 'time', 'answer_status',
+                                   'sending_status', 'collection']:
+                        message[key] = pre_message[key]
+        return message
 
     def run(self, message={}):
         answer = {}
         message = self._format_message(message)
         while self.keep_loop(message):
-#            self._reflection_information(message, answer)
+            self._reflection_information(message, answer)
             self.handler_db.message_in(message)
             answer = self.conversation_machine.get_message(self.handler_db,
                                                            message)
+            self.handler_db.store_query(answer)
             if self.breaker(answer):
                 for post in answer.get_all_messages():
                     self.post(post)
@@ -85,7 +89,7 @@ class TerminalUIHandler(HandlerConvesationUI):
 #                self.post(message['message'][-1])
 #                return None
         for m in message.get_post():
-            self.get_post(m)
+            self.post(m)
         for m in message.get_last_post():
             wait_time = min([len(m['message'])*1/15., 3])
             time.sleep(wait_time)
