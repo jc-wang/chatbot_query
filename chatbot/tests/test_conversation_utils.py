@@ -23,6 +23,7 @@ from chatbot.conversation import RandomChooser, SequentialChooser,\
     QuerierSizeDrivenChooser, QuerierSplitterChooser
 from chatbot.conversation import BaseQuerier, NullQuerier
 from chatbot.conversation import BaseDetector
+from chatbot import ChatbotMessage
 
 
 class Test_Transitions(unittest.TestCase):
@@ -33,6 +34,8 @@ class Test_Transitions(unittest.TestCase):
         # Create a candidate responses
         self.responses = [{'message': 'Hello! How are you?'},
                           {'message': 'These are test messages'}]
+        self.responses = [ChatbotMessage.from_candidates_messages(r)
+                          for r in self.responses]
         for e in self.responses:
             e.update({'collection': False})
         # Create transition condition and states
@@ -62,8 +65,10 @@ class Test_Transitions(unittest.TestCase):
         self.assert_transition(null_transition)
 
     def test_base_transitions(self):
-        ## WARNING: from_transition_info CANNOT be initilize from a
-        ## NullTransitionConversation instance
+        transition = TransitionConversationStates.from_transition_info(None)
+        transition.set_current_state(self.conversationstate)
+        self.assert_transition(transition)
+
         pars = [self.transitions, self.function]
         transition = TransitionConversationStates.from_transition_info(pars)
         transition.set_current_state(self.conversationstate)
@@ -71,10 +76,6 @@ class Test_Transitions(unittest.TestCase):
 
         transition =\
             TransitionConversationStates.from_transition_info(transition)
-        transition.set_current_state(self.conversationstate)
-        self.assert_transition(transition)
-
-        transition = TransitionConversationStates.from_transition_info(None)
         transition.set_current_state(self.conversationstate)
         self.assert_transition(transition)
 
@@ -107,6 +108,9 @@ class Test_Choosers(unittest.TestCase):
     def setUp(self):
         self.candidate_messages = [{'message': 'Nein?', 'tag': 5},
                                    {'message': 'It could be valid', 'tag': 0}]
+        self.candidate_messages = [ChatbotMessage.from_candidates_messages(r)
+                                   for r in self.candidate_messages]
+
         for e in self.candidate_messages:
             e.update({'query_idxs': np.random.random(10), 'collection': False,
                       'selector_types': np.random.random(2), 'query': 0})
@@ -123,7 +127,8 @@ class Test_Choosers(unittest.TestCase):
         ## Checking collection of messages
         if collection:
             m2 = {'message': self.candidate_messages, 'collection': True,
-                  'selector_types': m['selector_types']}
+                  'selector_types': m['selector_types'], 'from': 'user'}
+            m2 = ChatbotMessage.from_candidates_messages(m2)
             response = chooser.choose(m2)
             self.assertIsInstance(response, dict)
             self.assertIn('message', response)
@@ -179,6 +184,9 @@ class Test_Querier(unittest.TestCase):
         self.messages =\
             [{'message': '', 'selector_types': 0, 'collection': False},
              {'message': '', 'selector_types': 0, 'collection': False}]
+
+        self.messages = [ChatbotMessage.from_candidates_messages(r)
+                         for r in self.messages]
 
         self.query_info =\
             {'query': {'query_idxs': np.random.randint(0, 10000, 10),
@@ -236,6 +244,9 @@ class Test_Detection(unittest.TestCase):
     def setUp(self):
         self.answers = [{'message': 'Nein?', 'tag': 5},
                         {'message': 'It could be valid', 'tag': 4}]
+        self.answers = [ChatbotMessage.from_candidates_messages(r)
+                        for r in self.answers]
+
         for e in self.answers:
             e.update({'query_idxs': np.random.random(10), 'collection': False})
         self.postypes = ['a', 'b']
@@ -254,8 +265,12 @@ class Test_Detection(unittest.TestCase):
             self.assert_correct_response(response)
 
         # Detect from a input bunch of messages
-        collected_answers = {'selector_types': [], 'message': self.answers,
-                             'collection': True}
+        collected_answers =\
+            ChatbotMessage.from_message({'selector_types': [],
+                                         'message': self.answers,
+                                         'collection': True,
+                                         'from': 'user'})
+
         response = detector.detect(collected_answers)
         ## Check structure
         self.assert_correct_response(response)
