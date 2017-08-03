@@ -4,6 +4,7 @@ import copy
 import numpy as np
 
 from functools import wraps
+from chatbot import ChatbotMessage
 
 
 def formatting_store_detection(func):
@@ -14,13 +15,12 @@ def formatting_store_detection(func):
             answer = args[1]
         else:
             answer = kwargs['message']
+        ##
+        assert(isinstance(answer, ChatbotMessage))
         ## Detection process
         selector_types = func(*args, **kwargs)
         ## Store results in message
-        if answer['collection']:
-            answer['selector_types'].append(selector_types)
-        else:
-            answer['selector_types'] = selector_types
+        answer = answer.add_selector_types(selector_types)
         return answer
     return function_wrapped
 
@@ -36,18 +36,8 @@ def formatting_base_response(func):
         ## Selection process from database of possible messages
         selected_message = func(*args, **kwargs)
         ## Build output message
-        if message['collection']:
-            # Prepare output message
-            output_message = copy.copy(message)
-            # Transfering data to new message
-            output_message['query'] = selected_message['query']
-            output_message['selector_types'] =\
-                selected_message['selector_types']
-            output_message['message'].append(selected_message)
-        else:
-            output_message = copy.copy(selected_message)
-            output_message['collection'] = False
-            output_message['query'] = message['query']
+        output_message = message.collapse_message(selected_message)
+        output_message.check_message()
         return output_message
 
     return function_wrapped
@@ -114,8 +104,7 @@ class NullQuerier(BaseQuerier):
 
     def __init__(self):
         def null_querier(handler_db, message):
-            message['query'] = None
-            return message
+            return None
         super().__init__(null_querier)
 
 
@@ -133,13 +122,13 @@ class BaseChooser(object):
     def from_chooser_info(cls, chooser_info):
         if chooser_info is None:
             return NullChooser()
-        elif type(chooser_info) == list:
+        elif type(chooser_info) in [list, tuple]:
             return RandomChooser(chooser_info)
         else:
             assert(isinstance(chooser_info, BaseChooser))
             obj = copy.copy(chooser_info)
             obj.times_used = 0
-            return cls
+            return obj
 
 
 class NullChooser(BaseChooser):
@@ -156,7 +145,8 @@ class NullChooser(BaseChooser):
 class RandomChooser(BaseChooser):
 
     def __init__(self, candidate_messages):
-        self.candidates = candidate_messages
+        self.candidates = [ChatbotMessage.from_candidates_messages(r)
+                           for r in candidate_messages]
         self.times_used = 0
 
     @formatting_base_response
@@ -168,7 +158,8 @@ class RandomChooser(BaseChooser):
 class SequentialChooser(BaseChooser):
 
     def __init__(self, candidate_messages, startsentence=-1):
-        self.candidates = candidate_messages
+        self.candidates = [ChatbotMessage.from_candidates_messages(r)
+                           for r in candidate_messages]
         if startsentence == -1:
             startsentence = np.random.randint(len(self.candidates))
         self.times_used = startsentence
@@ -179,7 +170,8 @@ class QuerierSizeDrivenChooser(BaseChooser):
 
     def __init__(self, candidate_messages, type_var, cond,
                  query_var='query_idxs'):
-        self.candidates = candidate_messages
+        self.candidates = [ChatbotMessage.from_candidates_messages(r)
+                           for r in candidate_messages]
         self.type_var = type_var
         self.cond = cond
         self.query_var = query_var
@@ -196,7 +188,8 @@ class QuerierSplitterChooser(BaseChooser):
 
     def __init__(self, candidate_messages, type_var, cond,
                  query_var='query_idxs'):
-        self.candidates = candidate_messages
+        self.candidates = [ChatbotMessage.from_candidates_messages(r)
+                           for r in candidate_messages]
         self.type_var = type_var
         self.cond = cond
         self.query_var = query_var
@@ -233,12 +226,15 @@ class TransitionConversationStates(object):
             return cls(*transition_info)
         else:
             assert(isinstance(transition_info, TransitionConversationStates))
+            if transition_info.condition is None:
+                return NullTransitionConversation()
             return cls(transition_info.transitions, transition_info.condition)
 
     def set_current_state(self, conversationstate):
         self.currentstate = conversationstate.name
 
     def next_state(self, response):
+        print('-'*20, response)
         i_states = self.condition(response)
         name_next_state = self.transitions[i_states]
         return name_next_state
