@@ -15,6 +15,7 @@ class ProfileUser(object):
         elif isinstance(profile_user, ProfileUser):
             self.profile = profile_user.profile
         else:
+            assert(type(profile_user) == dict)
             self.profile = profile_user
 
 
@@ -32,8 +33,9 @@ class HandlerConvesationDB(object):
         self.profile_user = ProfileUser(profile_user)
         self.messagesDB = []
         self.queriesDB = []
+        self.databases = {}
         if databases is None:
-            self.databases = {}
+            pass
         elif type(databases) == dict:
             self.databases.update(databases)
         else:
@@ -91,6 +93,7 @@ class HandlerConvesationDB(object):
         while (len(retrieved) < number) and (i <= (len(self.messagesDB))):
             m = self.messagesDB[-i]
             if 'query' in m:
-                retrieved.append(m)
+                if m['query']:
+                    retrieved.append(m)
             i += 1
         return retrieved
