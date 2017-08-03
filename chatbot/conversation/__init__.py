@@ -166,6 +166,7 @@ class GeneralConversationState(BaseConversationState):
                 self.runned = True
             else:
                 self.runned = False
+                self.next_state = self.name
         elif self.flag_question_answer == 1:
             self._manage_limited_runs(self.flag_question_answer)
             if self.asker:
@@ -173,9 +174,10 @@ class GeneralConversationState(BaseConversationState):
                 self.runned = True
             else:
                 self.runned = False
+                self.next_state = self.name
         # If shadow only runs 1 time!!!
-        if self.shadow:
-            self.runned = True
+#        if self.shadow:
+#            self.runned = True
 
     def _manage_limited_runs(self, actual_flag):
         if self.running_times <= self.counts:
@@ -190,7 +192,7 @@ class GeneralConversationState(BaseConversationState):
         ## 1. Choose Answer
         message = copy.copy(self.chooser.choose(message))
         ## 2. Format Answer
-        message = message.format_message(handler_db.profile_user.profile)
+        message = self._message_formatting(handler_db, message)
         ## 3. Add tags
         message = self._add_tags(message)
         ## 4. Sending status
@@ -202,6 +204,21 @@ class GeneralConversationState(BaseConversationState):
                                                     answer_status)
         ## 6. Structure messages
         message = message.structure_answer()
+        return message
+
+    def _message_formatting(self, handler_db, message):
+        formatting_tags = handler_db.profile_user.profile
+        formatting_tags.update(handler_db.get_last_query())
+        ## TEMPORAL
+        if 'query' in message:
+            if message['query'] is not None:
+                if 'answer_names' in message['query']:
+                    if message['answer_names'] is not None:
+                        formatting_tags.update(message['answer_names'])
+        if 'answer_names' in message:
+            if message['answer_names'] is not None:
+                formatting_tags.update(message['answer_names'])
+        message = message.format_message(formatting_tags)
         return message
 
     def _process_message(self, message):
@@ -525,58 +542,6 @@ class TalkingState(GeneralConversationState):
 #        self.last_query = {}
         pass
 
-#    def run(self, handler_io):
-#        """
-#        """
-#        ## 0. Choose Question
-#        message = self.chooser.choose()
-#        message['message'] =\
-#            message['message'].format(**handler_io.profile_user.profile)
-#
-#        ## 1. Get answer
-#        answer = handler_io.interact(message, self.tags)
-#
-#        ## 2. Process answer
-#        answer = self.detector.detect(answer)
-#
-#        return answer
-#
-#    def get_message(self, handler_db, message):
-#        if self.flag_question_answer == 0:
-#            answer = self._choose_question(handler_db)
-#            self.flag_question_answer = 1
-#        else:
-#            answer = self._process_message(message)
-#            self.flag_question_answer = 0
-#        assert(type(answer) == dict)
-#        return answer
-#
-#    def _choose_question(self, handler_db):
-#        ## 00. Reset some properties
-#        self.next_state = self.name
-#        ## 0. Choose Question
-#        message = copy.copy(self.chooser.choose())
-#        message['message'] =\
-#            message['message'].format(**handler_db.profile_user.profile)
-#        message['last'] = self.last
-#        ## 1. Store query information if it is available
-#        if 'query' in message:
-#            self.last_query = message['query']
-#        return message
-#
-#    def _process_message(self, answer):
-#        ## 1. Process answer
-#        answer = self.detector.detect(answer)
-#        ## 2. Compute next
-#        self._compute_next(answer)
-#        ## 3. Query managment
-#        if self.last_query != {}:
-#            answer['query'] = self.last_query
-#            self.last_query = {}
-#        ## WARNING: Undesired
-#        answer = clean_message(answer)
-#        return answer
-
 
 class StoringState(GeneralConversationState):
     """Interacts with the storage without interacting with the user.
@@ -585,15 +550,6 @@ class StoringState(GeneralConversationState):
     def __init__(self, name, storer, transition=None):
         super().__init__(name, querier=storer, transition=transition,
                          asker=False, shadow=True)
-
-#    def get_message(self, handler_db, message):
-#        answer = self.storer(handler_db, message)
-#        self._compute_next(answer)
-#        return answer
-
-#    def run(self, handler_io):
-#        self.storer(handler_io)
-#        return {}
 
 
 class QuerierState(GeneralConversationState):
@@ -607,68 +563,6 @@ class QuerierState(GeneralConversationState):
                          tags=tags, shadow=False)
 #        self.restart()
 
-#    def restart(self):
-#        # Flag to know if the it has to get message or make and answer
-#        self.flag_question_answer = 0
-#        # Track queries
-#        self.queriesDB = []
-#        # Last query memory
-#        self.last_query = {}
-#        self.q_data = {}
-#
-#    def get_message(self, handler_db, message):
-#        if self.flag_question_answer == 0:
-#            answer = self._choose_question(handler_db, message)
-#            self.flag_question_answer = 1
-#        else:
-#            answer = self._process_message(message)
-#            assert('message' not in answer)
-#            self.flag_question_answer = 0
-#        return answer
-#
-#    def _process_message(self, answer):
-#        ## 0. Reload information of question
-#        answer.update(self.q_data)
-#        answer.update(self.last_query)
-#        ## 1. Process answer
-#        answer = self.detector.detect(answer)
-#        ## 2. Compute next
-#        self._compute_next(answer)
-#        ## 3. Privatize answer (remove message, only metadata inmportant)
-##        answer = clean_message(answer)
-#        ## 4. Clean storage
-#        self.q_data = {}
-#        self.last_query = {}
-#        answer = clean_message(answer)
-#        return answer
-#
-#    def _choose_question(self, handler_db, message):
-#        ## 00. Reset some properties
-#        self.next_state = self.name
-#        ## 0. Query
-#        query_message = self.querier(handler_db, message)
-#        ## 1. Choose Question
-#        message = copy.copy(self.chooser.choose(query_message['query']))
-#        ## 2. Store in logqueries db
-#        self.queriesDB.append(query_message)
-#        self.last_query = query_message
-#        ## 3. Format message
-#        message['message'] =\
-#            message['message'].format(**query_message['answer_names'])
-#        ## 4. Give a tag to the answer type
-#        message['answer_type'] =\
-#            self.chooser.choose_tag(query_message['query'])
-#        ## 5. Store question information
-#        self.q_data = self._store_question_data(message)
-#        return message
-#
-#    def _store_question_data(self, question):
-#        q_data = {}
-#        for v in question:
-#            if v != 'message':
-#                q_data[v] = question[v]
-#        return q_data
-
 
 class CheckerState(GeneralConversationState):
     """Acts as a control flow in the ConversationStateMachine without
@@ -678,13 +572,3 @@ class CheckerState(GeneralConversationState):
     def __init__(self, name, checker, transition=None):
         super().__init__(name, querier=checker, transition=transition,
                          asker=False, shadow=True)
-#
-#    def run(self, handler_io):
-#        check_message = self.checker(handler_io)
-#        return check_message
-#
-#    def get_message(self, handler_db, message):
-#        answer = self.checker(handler_db, message)
-#        self._compute_next(answer)
-#        answer = clean_message(answer)
-#        return answer

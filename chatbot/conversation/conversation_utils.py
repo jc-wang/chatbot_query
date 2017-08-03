@@ -38,6 +38,14 @@ def formatting_base_response(func):
         ## Build output message
         output_message = message.collapse_message(selected_message)
         output_message.check_message()
+        ## WARNING: Probably into class message
+        for key in message:
+            if key not in output_message:
+                if key not in ['message', 'from', 'time', 'answer_status',
+                               'sending_status', 'collection']:
+                    output_message[key] = message[key]
+#        if 'query' in message:
+#            output_message['query'] = message['query']
         return output_message
 
     return function_wrapped
@@ -96,7 +104,11 @@ class BaseQuerier(object):
 
     def make_query(self, handler_db, message):
         query_message = self.querier(handler_db, message)
-        message['query'] = query_message
+        if isinstance(query_message, dict):
+            if 'query' in query_message:
+                message.update(query_message)
+        else:
+            message['query'] = query_message
         return message
 
 
@@ -203,7 +215,7 @@ class QuerierSplitterChooser(BaseChooser):
 
     def choose_tag(self, message):
         # TODO: Extend
-        i = self.cond(message[self.query_var])
+        i = self.cond(message['query'][self.query_var])
         return i
 
 
@@ -234,7 +246,6 @@ class TransitionConversationStates(object):
         self.currentstate = conversationstate.name
 
     def next_state(self, response):
-        print('-'*20, response)
         i_states = self.condition(response)
         name_next_state = self.transitions[i_states]
         return name_next_state
