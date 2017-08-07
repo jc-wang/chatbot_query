@@ -47,8 +47,7 @@ docdirbase = 'share/doc/chatbotQuery-%s' % version
 # add basic documentation
 data = [(docdirbase, glob("*.txt"))]
 # add examples
-for d in ['advanced',
-          'algorithms']:
+for d in ['advanced', 'algorithms']:
     dd = os.path.join(docdirbase, 'examples', d)
     pp = os.path.join('examples', d)
     data.append((dd, glob(os.path.join(pp, "*.py"))))
