@@ -3,12 +3,12 @@ language: python
 sudo: false
 python:
   - "3.5"
-virtualenv:
-  system_site_packages: true
-addons:
-   apt:
-      packages:
-      - gfortran
+#virtualenv:
+#  system_site_packages: true
+#addons:
+#   apt:
+#      packages:
+#      - gfortran
 #      - nose
 #      - libgfortran
 #      - coverage
