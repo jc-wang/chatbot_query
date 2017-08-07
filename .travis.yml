@@ -21,8 +21,9 @@ python:
 #
 ## installation
 install:
-  - pip install -r requirements.txt
-  - python3 setup.py install
+#  - pip install -r requirements.txt
+#  - python3 setup.py install
+   - source install.sh
 ## command to run tests
 script:
 #   - nosetests
