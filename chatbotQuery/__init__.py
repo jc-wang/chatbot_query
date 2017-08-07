@@ -42,8 +42,8 @@ class ChatbotMessage(dict):
         return cls(message)
 
     @classmethod
-    def fake_user_message(self):
-        return ChatbotMessage({'from': 'user'})
+    def fake_user_message(cls):
+        return cls({'from': 'user'})
 
     @property
     def last_message_text(self):
@@ -162,10 +162,10 @@ class ChatbotMessage(dict):
                     old_tags = self['message'][-1]['tags']
                     old_tags += tags
                     old_tags = list(set(old_tags))
-                    self['tags'][-1]['tags'] = old_tags
+                    self['message'][-1]['tags'] = old_tags
+                    self['tags'] = old_tags
                 else:
                     self['message'][-1]['tags'] = tags
-
         return self
 
     def collapse_message(self, message):
