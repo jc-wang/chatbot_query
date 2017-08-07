@@ -136,6 +136,7 @@ class GeneralConversationState(BaseConversationState):
         self.runned = False
         ## External control information
         self.shadow = shadow
+        self.posting = False
         ## Next state
         self.next_state = self.name
         ## TODO: shadow and asker?
@@ -202,7 +203,11 @@ class GeneralConversationState(BaseConversationState):
         answer_status = self.sending_status and self.asker
         message = message.add_entry_to_last_message('answer_status',
                                                     answer_status)
-        ## 6. Structure messages
+        ## 6. Posting status
+#        posting_status = self.shadow and self.posting
+        message = message.add_entry_to_last_message('posting_status',
+                                                    self.posting)
+        ## 7. Structure messages
         message = message.structure_answer()
         return message
 
@@ -308,9 +313,10 @@ class ConversationStateMachine(BaseConversationState):
         # States storing
         self.states = dict(zip(state_names, states))
         self._set_nulltransition_endstates()
-        # Tracking transtion
+        # Tracking transition
         self.next_state = self.name
         self.flag_question_answer = 0
+        self._force_post_in_ending_states()
         # Create abspathname
         self.create_abspathname(self.name)
         self.abspathname = copy.copy(self._pathname_formatter(self.name))
@@ -329,6 +335,12 @@ class ConversationStateMachine(BaseConversationState):
     @property
     def is_current_state_runned(self):
         return self.states[self.currentState].runned
+
+    def _force_post_in_ending_states(self):
+        for endstatename in self.endStates:
+            endState = self.states[endstatename]
+            if isinstance(endState, GeneralConversationState):
+                endState.posting = True
 
     def _set_nulltransition_endstates(self):
         for endit in self.initial_endStates:
@@ -557,10 +569,10 @@ class QuerierState(GeneralConversationState):
     """
 
     def __init__(self, name, querier, chooser, detector=None, transition=None,
-                 tags=None):
+                 tags=None, shadow=False):
         super().__init__(name, detector=detector, chooser=chooser,
                          querier=querier, transition=transition, asker=True,
-                         tags=tags, shadow=False)
+                         tags=tags, shadow=shadow)
 #        self.restart()
 
 
