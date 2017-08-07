@@ -104,8 +104,17 @@ def computing_str_distance_matrix(words, vocabulary):
 #    dist_matrix = np.zeros(len(words), len(vocabulary))
     def str_distance(i, j):
         return jellyfish.damerau_levenshtein_distance(words[i], vocabulary[j])
-    dist_matrix = np.fromfunction(str_distance, (len(words), len(vocabulary)),
-                                  dtype=np.float)
+#    dist_matrix = np.fromfunction(str_distance, (len(words), len(vocabulary)),
+#                                  dtype=np.float)
+
+    def str_distance_matrix(n, m):
+        x = np.zeros((n, m)).astype(float)
+        for i in range(n):
+            for j in range(m):
+                x[i, j] = str_distance(i, j)
+        return x
+    str_dist_f = np.vectorize(str_distance_matrix)
+    dist_matrix = str_dist_f(len(words), len(vocabulary))
     return dist_matrix
 
 
