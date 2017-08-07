@@ -24,6 +24,7 @@ install:
 #  - pip install -r requirements.txt
 #  - python3 setup.py install
    - source install.sh
+   - python3 -m textblob.download_corpora
 ## command to run tests
 script:
 #   - nosetests
