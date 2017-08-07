@@ -21,11 +21,12 @@ python:
 #
 ## installation
 install:
-  - pip3 install -r requirements.txt
+  - pip install -r requirements.txt
   - python3 setup.py install
 ## command to run tests
 script:
 #   - nosetests
-  - travis_wait 20 'test_script.sh'
+  - python3 -m "nose" --with-coverage --cover-package=chatbotQuery
+#  - travis_wait 20 'test_script.sh'
 #after_success:
 #  - coveralls
