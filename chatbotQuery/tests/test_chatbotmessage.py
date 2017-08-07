@@ -3,7 +3,7 @@ import unittest
 #import mock
 from unittest import mock
 
-from chatbot import ChatbotMessage
+from chatbotQuery import ChatbotMessage
 
 
 class Test_Transitions(unittest.TestCase):

@@ -10,14 +10,15 @@ conversation.
 import copy
 import numpy as np
 
-from chatbot.conversation.conversation_utils import BaseDetector
-from chatbot.conversation.conversation_utils import BaseQuerier, NullQuerier
-from chatbot.conversation.conversation_utils import RandomChooser,\
+from chatbotQuery.conversation.conversation_utils import BaseDetector
+from chatbotQuery.conversation.conversation_utils import BaseQuerier,\
+    NullQuerier
+from chatbotQuery.conversation.conversation_utils import RandomChooser,\
     QuerierSizeDrivenChooser, QuerierSplitterChooser, SequentialChooser,\
     NullChooser, BaseChooser
-from chatbot.conversation.conversation_utils import\
+from chatbotQuery.conversation.conversation_utils import\
     NullTransitionConversation, TransitionConversationStates
-from chatbot import ChatbotMessage
+from chatbotQuery import ChatbotMessage
 
 
 class BaseConversationState(object):

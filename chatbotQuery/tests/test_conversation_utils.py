@@ -17,13 +17,13 @@ import unittest
 from unittest import mock
 import numpy as np
 
-from chatbot.conversation import TransitionConversationStates,\
+from chatbotQuery.conversation import TransitionConversationStates,\
     NullTransitionConversation
-from chatbot.conversation import RandomChooser, SequentialChooser,\
+from chatbotQuery.conversation import RandomChooser, SequentialChooser,\
     QuerierSizeDrivenChooser, QuerierSplitterChooser
-from chatbot.conversation import BaseQuerier, NullQuerier
-from chatbot.conversation import BaseDetector
-from chatbot import ChatbotMessage
+from chatbotQuery.conversation import BaseQuerier, NullQuerier
+from chatbotQuery.conversation import BaseDetector
+from chatbotQuery import ChatbotMessage
 
 
 class Test_Transitions(unittest.TestCase):

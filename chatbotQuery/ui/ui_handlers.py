@@ -4,8 +4,8 @@
 """
 
 import time
-from chatbot import ChatbotMessage
-from chatbot.ui.flask_utils import run_flask_app_conversation
+from chatbotQuery import ChatbotMessage
+from chatbotQuery.ui.flask_utils import run_flask_app_conversation
 
 
 class HandlerConvesationUI(object):

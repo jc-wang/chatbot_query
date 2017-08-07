@@ -16,14 +16,14 @@ import copy
 from os.path import isfile
 import numpy as np
 
-from chatbot.conversation import TalkingState, SequentialChooser,\
+from chatbotQuery.conversation import TalkingState, SequentialChooser,\
     TransitionConversationStates, ConversationStateMachine, QuerierState,\
     QuerierSplitterChooser, CheckerState, StoringState, QuestioningState
 
-from chatbot.aux_functions import create_fixed_condition, splitter,\
+from chatbotQuery.aux_functions import create_fixed_condition, splitter,\
     yes_no_answer, create_yes_no_question
-from chatbot.ui import HandlerConvesationDB, TerminalUIHandler
-from chatbot.dbapi import DataBaseAPI
+from chatbotQuery.ui import HandlerConvesationDB, TerminalUIHandler
+from chatbotQuery.dbapi import DataBaseAPI
 
 
 ### DB interface salutations

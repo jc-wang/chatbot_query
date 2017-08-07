@@ -4,7 +4,7 @@ import copy
 import numpy as np
 
 from functools import wraps
-from chatbot import ChatbotMessage
+from chatbotQuery import ChatbotMessage
 
 
 def formatting_store_detection(func):

@@ -3,7 +3,7 @@
 import unittest
 from itertools import product
 
-from chatbot.dbapi.text_processing import steming_words,\
+from chatbotQuery.dbapi.text_processing import steming_words,\
     computing_str_distance_matrix, Preprocessor, Words_collapser
 
 

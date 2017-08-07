@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import copy
 
-from chatbot.dbapi import DataBaseAPI
+from chatbotQuery.dbapi import DataBaseAPI
 
 
 ### Auxiliar functions
@@ -71,7 +71,7 @@ class Test_DataBaseAPI(unittest.TestCase):
             {'label': price_q_keywords}
         ## Test the constructor
         datafile = os.path.join(os.path.abspath(__file__),
-                                '../../data/products.csv')
+                                '../../datasets/products.csv')
         datafile = os.path.abspath(datafile)
 
 #        data = DataBaseAPI(pd.read_csv(datafile, index_col=0), type_vars,

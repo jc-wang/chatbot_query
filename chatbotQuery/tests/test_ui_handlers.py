@@ -6,8 +6,8 @@ import io
 from unittest import mock
 from itertools import product
 
-from chatbot import ChatbotMessage
-from chatbot.ui import HandlerConvesationUI, TerminalUIHandler
+from chatbotQuery import ChatbotMessage
+from chatbotQuery.ui import HandlerConvesationUI, TerminalUIHandler
 
 
 class StringIO(io.StringIO):
@@ -91,7 +91,7 @@ class Test_HandlerConvesationDB(unittest.TestCase):
             handler_ui.run()
 
     def test_generalmockUI(self):
-        class_patch_ui = 'chatbot.ui.HandlerConvesationUI'
+        class_patch_ui = 'chatbotQuery.ui.HandlerConvesationUI'
         with mock.patch(class_patch_ui, autospec=True) as MockUI:
             ## Definition of the class
             instance = MockUI.return_value

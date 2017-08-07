@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 from itertools import product
 
-from chatbot.ui import ProfileUser, HandlerConvesationDB
+from chatbotQuery.ui import ProfileUser, HandlerConvesationDB
 
 
 class Test_ProfileUser(unittest.TestCase):

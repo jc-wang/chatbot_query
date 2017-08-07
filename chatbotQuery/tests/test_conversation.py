@@ -6,16 +6,16 @@ from unittest import mock
 import numpy as np
 from itertools import product
 
-from chatbot.conversation import GeneralConversationState, CheckerState,\
+from chatbotQuery.conversation import GeneralConversationState, CheckerState,\
     QuerierState, StoringState, TalkingState, ConversationStateMachine
-from chatbot.conversation import SequentialChooser,\
+from chatbotQuery.conversation import SequentialChooser,\
     TransitionConversationStates
-from chatbot import ChatbotMessage
+from chatbotQuery import ChatbotMessage
 
-#from chatbot.conversation import RandomChooser, SequentialChooser,\
+#from chatbotQuery.conversation import RandomChooser, SequentialChooser,\
 #    QuerierSizeDrivenChooser, QuerierSplitterChooser
-#from chatbot.conversation import BaseQuerier, NullQuerier
-#from chatbot.conversation import BaseDetector
+#from chatbotQuery.conversation import BaseQuerier, NullQuerier
+#from chatbotQuery.conversation import BaseDetector
 
 
 class Test_GeneralConversationState(unittest.TestCase):

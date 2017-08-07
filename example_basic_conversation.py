@@ -12,15 +12,15 @@ How to run the example:
 
 """
 
-from chatbot.conversation import TalkingState, SequentialChooser,\
+from chatbotQuery.conversation import TalkingState, SequentialChooser,\
     TransitionConversationStates, NullTransitionConversation, BaseDetector,\
     ConversationStateMachine, CheckerState, StoringState, AnsweringState,\
     QuestioningState
 
-from chatbot.aux_functions import create_probsplitter_condition,\
+from chatbotQuery.aux_functions import create_probsplitter_condition,\
     create_fixed_condition, yes_no_answer
 
-from chatbot.ui import HandlerConvesationDB, TerminalUIHandler
+from chatbotQuery.ui import HandlerConvesationDB, TerminalUIHandler
 
 
 ### HELLO QUESTIONS
