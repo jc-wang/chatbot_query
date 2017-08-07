@@ -14,7 +14,8 @@ from sklearn.neighbors import NearestNeighbors
 
 class DataBaseAPI(object):
 
-    def __init__(self, data_info, type_vars, responses_formatter):
+    def __init__(self, data_info, type_vars, responses_formatter,
+                 parameter_formatter={}):
         if isinstance(data_info, pd.DataFrame):
             self.data = data_info
         else:
@@ -64,15 +65,29 @@ class DataBaseAPI(object):
             self.cat_rets[var].fit(data_sp)
 
         self.responses_formatter = responses_formatter
+        self.parameter_formatter = parameter_formatter
 
-    def query(self, keywords, pre=None):
-        ids = self.complete_query(keywords, pre)
-#        ids = self.ret.radius_neighbors(self.vectorizer.transform(keywords).A,
-#                                        0.75)
-#        ids = ids[1]
-        return ids
+    def query(self, keywords, pre=None, label=None):
+        pars = self._format_parameters(keywords, pre, label)
+        # TODO: Use in the future
+        ifchanged = self.changed_labels(pre, pars)
+
+        ids, query_result = self.complete_query(keywords, pre)
+        if self.empy_ids(ids['main_var']):
+            if pre is not None:
+                ids['main_var'] = pre['query_idxs']['main_var']
+        pars['query_result'] = query_result
+        return ids, pars
+
+    def empy_ids(self, ids):
+        return any([(len(e) == 0) for e in ids])
 
     def complete_query(self, keywords, pre=None):
+        queried = self.columwise_query(keywords)
+        queried, query_result = self.join_w_prequeries(queried, pre)
+        return queried, query_result
+
+    def columwise_query(self, keywords):
         queried = {}
         ## Main query
         ids = self.main_ret.radius_neighbors(self.main_vectorizer.
@@ -86,28 +101,119 @@ class DataBaseAPI(object):
                 self.cat_rets[var].radius_neighbors(self.cat_vectorizers[var].
                                                     transform(keywords))
         queried['cat_vars'] = queried_cat
-        if pre is not None:
-            queried = self.query_intersection(queried, pre)
         return queried
 
-    def query_intersection(self, queried0, queried1):
-        ids_cat = []
-        for c in queried0['cat_vars']:
-            ids_cat_c = np.array([], dtype=np.int64)
-            for c_i in queried1['cat_vars'][c][0]:
-                ids_cat_c =\
-                    np.union1d(self.cats_ids[c][self.categories[c][c_i]],
-                               ids_cat_c)
-            ids_cat.append(ids_cat_c)
-        pos_q1 = np.union1d(*ids_cat).astype(np.int64)
+    def _evaluate_queried(self, queried):
+        cat = not all([len(v[0]) == 0 for c, v in queried['cat_vars'].items()])
+        main_len = len(queried['main_var'][0])
+        ## WARNING: Hardcoded arbitrary quantity: len(self.data)/5
+        main = (main_len != 0) or (main_len >= 8)
+        if main:
+            query_result = {'query_type': 'elements'}
+        elif cat:
+            query_result = {'query_type': 'categories'}
+        else:
+            query_result = {'query_type': 'none'}
+        return query_result
 
-        queried0['main_var'] = [np.intersect1d(queried0['main_var'][0],
-                                               pos_q1)]
-        return queried0
+    def join_w_prequeries(self, queried, pre):
+        query_result = self._evaluate_queried(queried)
+        if pre is not None:
+            q_pre_type = pre['query_result']['query_type']
+            q_type = query_result['query_type']
+            if (q_pre_type == 'elements') and (q_type == 'elements'):
+                queried =\
+                    self._cross_element_element_query(queried,
+                                                      pre['query_idxs'])
+                query_result = {'query_type': 'elements'}
+            elif ((q_pre_type == 'elements') and (q_type == 'categories')
+                  or (q_pre_type == 'categories') and (q_type == 'elements')):
+                if q_pre_type == 'elements':
+                    queried =\
+                        self._cross_category_element_query(pre['query_idxs'],
+                                                           queried)
+                else:
+                    queried =\
+                        self._cross_category_element_query(queried,
+                                                           pre['query_idxs'])
+                query_result = {'query_type': 'elements'}
+            elif (q_pre_type == 'categories') and (q_type == 'categories'):
+                queried =\
+                    self._cross_category_category_query(queried,
+                                                        pre['query_idxs'])
+                query_result = {'query_type': 'elements'}
+            else:
+                # Query and query type of the last one
+                pass
+        return queried, query_result
+
+    def _cross_category_element_query(self, ids_ele, ids_cat):
+        ## Get the indices associated at each category
+        ids_i_cat = []
+        for c in ids_cat['cat_vars']:
+            ids_cat_each = []
+            for i in range(len(ids_cat['cat_vars'][c])):
+                ids_cat_c = np.array([], dtype=np.int64)
+                for c_i in ids_cat['cat_vars'][c][i]:
+                    ids_cat_c =\
+                        np.union1d(ids_cat_c,
+                                   self.cats_ids[c][self.categories[c][c_i]])
+                ids_cat_each.append(copy.copy(ids_cat_c))
+            ids_i_cat.append(ids_cat_each)
+        ## Get indices for each query
+        ids_i = []
+        for i in range(len(ids_i_cat[0])):
+            aux = np.union1d(*[ids[i] for ids in ids_i_cat]).astype(np.int64)
+            ids_i.append(aux)
+        ## Union in its own query
+        for i in range(len(ids_i)):
+            ids_i[i] = np.union1d(ids_i[i], ids_cat['main_var'][i])
+
+        ## Intersection with indices
+        for i in range(len(ids_i)):
+            ids_i[i] = np.intersect1d(ids_ele['main_var'][i], ids_i[i])
+
+        ## Categories
+        cat_ids = {}
+        for c in self.categories:
+            cat_ids[c] =\
+                [np.array([], dtype=np.int64) for i in range(len(ids_i))]
+        ids = {'main_var': ids_i, 'cat_vars': cat_ids}
+
+        return ids
+
+    def _cross_element_element_query(self, ids0, ids1):
+        for i in range(len(ids0['main_var'])):
+            ids0['main_var'][i] = np.intersect1d(ids0['main_var'][i],
+                                                 ids1['main_var'][i])
+        return ids0
+
+    def _cross_category_category_query(self, ids0, ids1):
+        for c in ids0['cat_vars']:
+            for i in range(len(ids0['cat_vars'][c])):
+                ids0['cat_vars'][c][i] = np.union1d(ids0['cat_vars'][c][i],
+                                                    ids1['cat_vars'][c][i])
+        return ids0
+
+#    def query_intersection(self, queried0, queried1):
+#        ids_cat = []
+#        for c in queried0['cat_vars']:
+#            ids_cat_c = np.array([], dtype=np.int64)
+#            for c_i in queried1['cat_vars'][c][0]:
+#                ids_cat_c =\
+#                    np.union1d(self.cats_ids[c][self.categories[c][c_i]],
+#                               ids_cat_c)
+#            ids_cat.append(ids_cat_c)
+#        pos_q1 = np.union1d(*ids_cat).astype(np.int64)
+#
+#        queried0['main_var'] = [np.intersect1d(queried0['main_var'][0],
+#                                               pos_q1)]
+#        return queried0
 
 #    def get(self, ids):
 #        assert(len(ids) == 1)
-#        d = dict(zip(['productname', 'brand'], self.data.loc[ids].as_matrix()))
+#        d = dict(zip(['productname', 'brand'],
+#                     self.data.loc[ids].as_matrix()))
 #        row = copy.copy(self.description).format(**d)
 #        return row
 
@@ -171,9 +277,9 @@ class DataBaseAPI(object):
         responses[category_code] = category_joiner(responses_cat)
         return ids_names, responses
 
-    def get_query_info(self, keywords, pre=None, label=False):
-        ids = self.query(keywords, pre)
-        query_info = self.get_query_info_from_ids(ids, label)
+    def get_query_info(self, keywords, pre=None, label=None):
+        ids, pars = self.query(keywords, pre, label)
+        query_info = self.get_query_info_from_ids(ids, **pars)
         return query_info
 
     def get_query_responses(self, ids, label=False):
@@ -184,17 +290,47 @@ class DataBaseAPI(object):
             responses = self.get_reponses(ids_names)
         return ids_names, responses
 
-    def get_query_info_from_ids(self, ids, label=False):
+    def get_query_info_from_ids(self, ids, label=False, query_result={}):
         ids_names, responses = self.get_query_responses(ids, label)
-        query_info = {'query': {'query_idxs': ids, 'query_names': ids_names},
+        query_info = {'query': {'query_idxs': ids, 'query_names': ids_names,
+                                'query_pars': {'label': label},
+                                'query_result': query_result},
                       'answer_names': responses}
         return query_info
 
     def get_reflection_query(self, message):
         query_info = {'query': {'query_idxs': message['query']['query_idxs'],
-                      'query_names': message['query']['query_names']},
+                      'query_names': message['query']['query_names'],
+                      'query_pars': message['query']['query_pars'],
+                      'query_result': message['query']['query_result']},
                       'answer_names': message['answer_names']}
         return query_info
+
+    def _format_parameters(self, keywords, pre, label):
+        pars = {}
+        for l in self.parameter_formatter:
+            pars[l] = self.parameter_formatter[l](keywords, pre)
+        if 'label' not in pars:
+            pars['label'] = False
+        if pre is not None:
+            if 'query' in pre:
+                if pre['query'] is not None:
+                    pars = pre['query']['query_pars']
+        if label:
+            pars['label'] = True
+
+        return pars
+
+    def changed_labels(self, pre, pars):
+        labels_old = False
+        if pre is not None:
+            if 'query' in pre:
+                if pre['query'] is not None:
+                    labels_old = pre['query']['query_pars']
+        new_labels = False
+        if 'label' in pars:
+            new_labels = pars['label']
+        return (not labels_old) and new_labels
 
 
 class DummyRetriever(object):
