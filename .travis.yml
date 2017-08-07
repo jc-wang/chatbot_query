@@ -11,17 +11,17 @@ addons:
 #      - libgfortran
 #      - coverage
 
-matrix:
-  include:
-    # "Recommended" environments: More recent versions, for Py2 and Py3.
-    - python: "3.5"
-      env: DEPS="" DISTRIB="conda" COVERAGE="true"
-
-# installation
-install:
-  - source install.sh
-# command to run tests
-script:
-  - travis_wait 20 'test_script.sh'
-after_success:
-  - coveralls
+#matrix:
+#  include:
+#    # "Recommended" environments: More recent versions, for Py2 and Py3.
+#    - python: "3.5"
+#      env: DEPS="" DISTRIB="conda" COVERAGE="true"
+#
+## installation
+#install:
+#  - source install.sh
+## command to run tests
+#script:
+#  - travis_wait 20 'test_script.sh'
+#after_success:
+#  - coveralls
