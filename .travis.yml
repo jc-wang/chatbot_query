@@ -5,13 +5,13 @@ python:
   - "3.5"
 #virtualenv:
 #  system_site_packages: true
-addons:
-   apt:
-      packages:
-      - gfortran
-      - nose
-      - libgfortran
-      - coverage
+#addons:
+#   apt:
+#      packages:
+#      - gfortran
+#      - nose
+#      - libgfortran
+#      - coverage
 
 #matrix:
 #  include:
@@ -21,13 +21,17 @@ addons:
 #
 ## installation
 install:
-#  - pip install -r requirements.txt
-#  - python3 setup.py install
-   - source install.sh
+  - pip install -r requirements.txt
+  - python3 setup.py install
+  - python3 -m textblob.download_corpora
+  - sudo rm -r build/ || true
+  - sudo rm -r dist/ || true
+  - sudo rm -r chatbotQuery.egg-info/ || true
+#   - source install.sh
 ## command to run tests
 script:
 #   - nosetests
   - python3 -m "nose" --with-coverage --cover-package=chatbotQuery
 #  - travis_wait 20 'test_script.sh'
-#after_success:
-#  - coveralls
+after_success:
+  - coveralls --config_file .coveragerc
