@@ -97,9 +97,10 @@ class HandlerConvesationUI(object):
     def keep_loop(self, message):
 #        if message is not None:
 #            return True
-        if self.conversation_machine.ended:
-            return True
-        return False
+#        if self.conversation_machine.ended:
+#            return True
+#        return False
+        return True
 
 
 class TerminalUIHandler(HandlerConvesationUI):
