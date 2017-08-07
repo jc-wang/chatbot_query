@@ -47,8 +47,8 @@ class Test_HandlerConvesationDB(unittest.TestCase):
             for p in product(*self.pos_query_messages):
                 pars = dict(zip(self.variables_query_messages, p))
                 handlerdb.query_past_messages(**pars)
-            handlerdb.message_in(self.message, 'prueba')
-            handlerdb.message_out(self.message, 'prueba')
+            handlerdb.message_in(self.message, 'db')
+            handlerdb.message_out(self.message, 'db')
             handlerdb.message_in(self.message)
             handlerdb.message_out(self.message)
             if 'db' in handlerdb.databases:

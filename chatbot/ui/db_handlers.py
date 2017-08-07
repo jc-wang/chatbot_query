@@ -43,16 +43,25 @@ class HandlerConvesationDB(object):
             self.databases = {'db': databases}
 
     def store_query(self, message, database='db'):
-        if 'query' in message:
-            if message['query'] is not None:
-                query_info = self.databases['db'].get_reflection_query(message)
-                query_info['time'] = time.strftime(datetime_format)
-                self.queriesDB.append(query_info)
+        if type(message['message']) == list:
+            for m in message['message']:
+                self.store_query(m)
+        else:
+            if 'query' in message:
+                if message['query'] is not None:
+                    if database in self.databases:
+                        query_info = self.databases[database].\
+                            get_reflection_query(message)
+                    else:
+                        query_info = {'query': message['query']}
+                    query_info['time'] = time.strftime(datetime_format)
+                    self.queriesDB.append(query_info)
 
     def message_in(self, message, tags=None):
         ## Message handling
         message = self._enrich_message(message, 'user', tags)
         self._record_conversation(message)
+        self.store_query(message)
 
     def message_out(self, message, tags=None):
         ## Message handling
@@ -70,6 +79,17 @@ class HandlerConvesationDB(object):
 
     def _record_conversation(self, message):
         self.messagesDB.append(message)
+
+    def query_last_queries(self, number=1):
+        retrieved = []
+        i = 1
+        while (len(retrieved) < number) and (i <= (len(self.messagesDB))):
+            m = self.queriesDB[-i]
+            if 'query' in m:
+                if m['query']:
+                    retrieved.append(m)
+            i += 1
+        return retrieved
 
     def query_past_messages(self, number=1, sender=None, tag=None):
         retrieved = []
