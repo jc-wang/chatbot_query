@@ -34,4 +34,4 @@ script:
   - python3 -m "nose" --with-coverage --cover-package=chatbotQuery
 #  - travis_wait 20 'test_script.sh'
 after_success:
-  - coveralls --config_file .coveragerc
+  - coveralls
