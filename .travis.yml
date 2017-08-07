@@ -1,6 +1,8 @@
 
 language: python
 sudo: false
+python:
+  - "3.5"
 virtualenv:
   system_site_packages: true
 addons:
@@ -18,8 +20,8 @@ addons:
 #      env: DEPS="" DISTRIB="conda" COVERAGE="true"
 #
 ## installation
-#install:
-#  - source install.sh
+install:
+  - source install.sh
 ## command to run tests
 script:
    - nosetests
