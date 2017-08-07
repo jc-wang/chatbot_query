@@ -41,6 +41,10 @@ class ChatbotMessage(dict):
             message['collection'] = True
         return cls(message)
 
+    @classmethod
+    def fake_user_message(self):
+        return ChatbotMessage({'from': 'user'})
+
     @property
     def last_message_text(self):
         if self['collection']:
@@ -70,6 +74,30 @@ class ChatbotMessage(dict):
                 self['message'][-1]['message'].format(**format_information)
         else:
             self['message'] = self['message'].format(**format_information)
+        return self
+
+    def reflect_message(self, pre_message):
+        for key in pre_message:
+            if key not in ['message', 'from', 'time', 'answer_status',
+                           'sending_status', 'collection', 'posting_status']:
+                self[key] = pre_message[key]
+        return self
+
+    def reflect_metadata(self, pre_message):
+        for key in pre_message:
+            if key not in self:
+                if key not in ['message', 'from', 'time', 'answer_status',
+                               'sending_status', 'collection']:
+                    self[key] = pre_message[key]
+        return self
+
+    def keep_query(self, pre_message):
+        if 'query' in pre_message:
+            if 'query' in self:
+                if self['query'] is None:
+                    self['query'] = pre_message['query']
+            else:
+                self['query'] = pre_message['query']
         return self
 
     def _if_possible_send(self, message):
@@ -109,10 +137,12 @@ class ChatbotMessage(dict):
             return False
         if 'sending_status' in self:
             return self['sending_status']
+        if 'posting_status' in self:
+            return self['posting_status']
 
     def is_prepared(self):
         if self['collection']:
-            return self._is_prepared(self['message'][-1])
+            return any([self._is_prepared(e) for e in self['message']])
         else:
             return self._is_prepared(self)
         return False
