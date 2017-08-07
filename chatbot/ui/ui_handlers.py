@@ -24,15 +24,6 @@ class HandlerConvesationUI(object):
             conversation_machine.set_machine()
         self.conversation_machine = conversation_machine
 
-    def _reflection_information(self, message, pre_message):
-        if 'answer_status' in pre_message:
-            if pre_message['answer_status']:
-                for key in pre_message:
-                    if key not in ['message', 'from', 'time', 'answer_status',
-                                   'sending_status', 'collection']:
-                        message[key] = pre_message[key]
-        return message
-
     def run(self, message={}):
         answer = {}
         message = self._format_message(message)
@@ -43,12 +34,46 @@ class HandlerConvesationUI(object):
                                                            message)
             self.handler_db.store_query(answer)
             if self.breaker(answer):
-                for post in answer.get_all_messages():
-                    self.post(post)
+                try:
+                    for post in answer.get_all_messages():
+                        self.interact(post, False)
+                except:
+                    pass
                 break
             self.handler_db.message_out(answer)
-            message = self.ask(answer)
+            message = self.interact(answer)
             message = self._format_message(message)
+
+    def interact(self, message, response=True):
+        if not response:
+            ## Force posting
+            if type(message['message']) == list:
+                for m in message['message']:
+                    self.post(m)
+            else:
+                self.post(message)
+        else:
+            ## Asking
+            for m in message.get_post():
+                self.post(m)
+            for m in message.get_last_post():
+                if not m['sending_status']:
+                    self.post(m)
+                else:
+                    response = self.ask(m)
+                    return response
+
+    def _reflection_information(self, message, pre_message):
+        message = ChatbotMessage(message)
+        if 'answer_status' in pre_message:
+            if pre_message['answer_status']:
+                message = message.reflect_message(pre_message)
+        if 'posting_status' in pre_message:
+            if not pre_message['posting_status']:
+                message = message.keep_query(pre_message)
+        else:
+            message = message.keep_query(pre_message)
+        return message
 
     def _format_message(self, message):
         if message == {}:
@@ -70,8 +95,8 @@ class HandlerConvesationUI(object):
             return False
 
     def keep_loop(self, message):
-        if message is not None:
-            return True
+#        if message is not None:
+#            return True
         if self.conversation_machine.ended:
             return True
         return False
@@ -80,32 +105,28 @@ class HandlerConvesationUI(object):
 class TerminalUIHandler(HandlerConvesationUI):
 
     def ask(self, message):
-#        if message['message'] == list:
-#            for i in range(len(message['message'])-1):
-#                self.post(message['message'][i])
-#            if message['message']['answer_status']:
-#                return self.ask(message['message'][-1])
-#            else:
-#                self.post(message['message'][-1])
-#                return None
-        for m in message.get_post():
-            self.post(m)
-        for m in message.get_last_post():
-            wait_time = min([len(m['message'])*1/15., 3])
-            time.sleep(wait_time)
-            response = input(m['message']+"\n")
-            if response is not None:
-                response = {'message': response}
+        self._create_time_delay(message['message'])
+        response = input(self._format_messageText(message, False))
+        if response is not None:
+            response = {'message': response}
         return response
 
     def post(self, message):
-        if type(message['message']) == list:
-            for m in message['message']:
-                self.post(m)
+        self._create_time_delay(message['message'])
+        print(self._format_messageText(message, True))
+
+    def _format_messageText(self, message, post):
+        if message['from'] == 'user':
+            return message['message']
         else:
-            wait_time = min([len(message['message'])*1/15., 1])
-            time.sleep(wait_time)
-            print(message['message'])
+            if post:
+                return 'Bot:  '+message['message']
+            else:
+                return 'Bot:  '+message['message']+'\n'+'User: '
+
+    def _create_time_delay(self, messageText):
+        wait_time = min([len(messageText)*1/15., 1.5])
+        time.sleep(wait_time)
 
 
 class FlaskUIHandler(HandlerConvesationUI):
