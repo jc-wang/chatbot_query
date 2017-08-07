@@ -21,7 +21,8 @@ addons:
 #install:
 #  - source install.sh
 ## command to run tests
-#script:
+script:
+   - nosetests
 #  - travis_wait 20 'test_script.sh'
 #after_success:
 #  - coveralls
