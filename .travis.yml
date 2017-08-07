@@ -27,6 +27,7 @@ install:
   - sudo rm -r build/ || true
   - sudo rm -r dist/ || true
   - sudo rm -r chatbotQuery.egg-info/ || true
+  - pip install coveralls
 #   - source install.sh
 ## command to run tests
 script:
