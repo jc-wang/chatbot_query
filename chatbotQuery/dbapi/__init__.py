@@ -313,9 +313,11 @@ class DataBaseAPI(object):
         if 'label' not in pars:
             pars['label'] = False
         if pre is not None:
-            if 'query' in pre:
-                if pre['query'] is not None:
-                    pars = pre['query']['query_pars']
+#            if 'query' in pre:
+#                if pre['query'] is not None:
+#                    pars = pre['query']['query_pars']
+            if 'query_pars' in pre:
+                pars = pre['query_pars']
         if label:
             pars['label'] = True
 
