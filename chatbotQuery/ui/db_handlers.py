@@ -83,7 +83,7 @@ class HandlerConvesationDB(object):
     def query_last_queries(self, number=1):
         retrieved = []
         i = 1
-        while (len(retrieved) < number) and (i <= (len(self.messagesDB))):
+        while (len(retrieved) < number) and (i <= (len(self.queriesDB))):
             m = self.queriesDB[-i]
             if 'query' in m:
                 if m['query']:
