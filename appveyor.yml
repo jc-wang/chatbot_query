@@ -14,7 +14,7 @@ branches:
   only:
     - master
 
-clone_folder: c:\workspace\pySpatialTools
+clone_folder: c:\workspace\chatbotQuery
 
 install:
   - set PATH=C:\\MinGW\\bin;%PATH%
