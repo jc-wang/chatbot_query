@@ -186,13 +186,14 @@ class Test_Querier(unittest.TestCase):
             [{'message': '', 'selector_types': 0, 'collection': False},
              {'message': '', 'selector_types': 0, 'collection': False}]
 
-        self.messages = [ChatbotMessage.from_candidates_messages(r)
-                         for r in self.messages]
-
         self.query_info =\
             {'query': {'query_idxs': np.random.randint(0, 10000, 10),
                        'query_names': [],
                        'answer_names': []}}
+        self.messages = [ChatbotMessage.from_candidates_messages(r)
+                         for r in self.messages]
+        [m.update(self.query_info) for m in self.messages]
+
         self.querier = lambda x, y: self.query_info
 
     def check_querier(self, querier):

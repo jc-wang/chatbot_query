@@ -38,12 +38,8 @@ def formatting_base_response(func):
         ## Build output message
         output_message = message.collapse_message(selected_message)
         output_message.check_message()
-        ## WARNING: Probably into class message
-        for key in message:
-            if key not in output_message:
-                if key not in ['message', 'from', 'time', 'answer_status',
-                               'sending_status', 'collection']:
-                    output_message[key] = message[key]
+        output_message = output_message.reflect_metadata(message)
+
 #        if 'query' in message:
 #            output_message['query'] = message['query']
         return output_message
@@ -108,7 +104,8 @@ class BaseQuerier(object):
             if 'query' in query_message:
                 message.update(query_message)
         else:
-            message['query'] = query_message
+            if query_message is not None:
+                message['query'] = query_message
         return message
 
 
@@ -218,7 +215,6 @@ class QuerierSplitterChooser(BaseChooser):
 
     def choose_tag(self, message):
         # TODO: Extend
-        print(message)
         if isinstance(message['query'], dict):
             i = self.cond(message['query'][self.query_var])
         else:
