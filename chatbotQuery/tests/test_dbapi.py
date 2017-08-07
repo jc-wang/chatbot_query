@@ -102,7 +102,6 @@ class Test_DataBaseAPI(unittest.TestCase):
     def query_test(self):
         ## Query for categories
         ids_cat, pars = self.data.query(self.keywords_cat)
-        print(ids_cat)
         ids_cat, pars =\
             self.data.query(self.keywords_cat, pre=self.create_pre(ids_cat))
 
@@ -124,6 +123,8 @@ class Test_DataBaseAPI(unittest.TestCase):
         q_cat = self.data.get_query_info(self.keywords_cat)
         q_main = self.data.get_query_info(self.keywords_main)
 
+        q_info = self.data.get_query_info(self.keywords_cat,
+                                          pre=q_cat['query'])
         q_info = self.data.get_query_info(self.keywords_main,
                                           pre=q_cat['query'])
         q_info = self.data.get_query_info(self.keywords_cat,
@@ -134,6 +135,10 @@ class Test_DataBaseAPI(unittest.TestCase):
                                           pre=q_main['query'], label=True)
         q_info = self.data.get_query_info(self.keywords_cat,
                                           pre=q_info['query'])
+        q_info = self.data.get_query_info(self.keywords_main,
+                                          pre=q_main['query'])
+        q_info = self.data.get_query_info(self.keywords_main,
+                                          pre=q_main['query'])
 
     def get_message_reflection_test(self):
         self.data.get_reflection_query(self.message)

@@ -2,6 +2,7 @@
 import unittest
 import sys
 import io
+import copy
 #from io import StringIO
 from unittest import mock
 from itertools import product
@@ -35,33 +36,40 @@ class Test_HandlerConvesationDB(unittest.TestCase):
         self.handler_db = handler_db
 
         ## Conversation machines
-        def factory_conversations(out_m, runned, ended):
+        def factory_conversations(out_m, runned):
             conversation_machine = mock.Mock()
             conversation_machine.setted = False
             conversation_machine.set_machine = lambda: None
             conversation_machine.get_message = lambda h, m: out_m
             conversation_machine.runned = runned
-            conversation_machine.ended = ended
             return conversation_machine
         self.factory_conversations = factory_conversations
 
         m0 = {'message': 'a', 'sending_status': True, 'from': 'bot'}
+        m00 = {'message': 'a', 'sending_status': False, 'from': 'bot'}
         m1 = {'message':
               [{'message': 'a', 'sending_status': False, 'from': 'user'},
                {'message': 'b', 'sending_status': True, 'from': 'bot'}],
               'collection': True, 'sending_status': True, 'from': 'bot'}
         m2 = {'message': 'a', 'from': 'user', 'sending_status': False}
         m3 = {'sending_status': True, 'from': 'user',
-              'message': [ChatbotMessage.from_candidates_messages(m0),
+              'message': [ChatbotMessage.from_candidates_messages(m00),
+                          ChatbotMessage.from_candidates_messages(m0),
                           ChatbotMessage(m2)]}
+        m4 = ChatbotMessage(copy.copy(m3))
+        m5 = ChatbotMessage(copy.copy(m3))
+        m4['posting_status'] = True
+        m5['posting_status'] = False
+        m4['answer_status'] = True
+        m5['answer_status'] = True
 
         self.messages =\
             [ChatbotMessage.from_candidates_messages(m0),
              ChatbotMessage(m1),
-             ChatbotMessage(m2), ChatbotMessage(m3)]
+             ChatbotMessage(m2), ChatbotMessage(m3), m4, m5]
 
         self.pos_inputs =\
-            [[None]+self.messages, [True], [True]]
+            [[None]+self.messages, [True]]
 
     def stub_stdin(self, inputs):
         stdin = sys.stdin
@@ -108,17 +116,26 @@ class Test_HandlerConvesationDB(unittest.TestCase):
             def ask(self, message):
                 return {}
 
+            def breaker(self, message):
+                if message is None:
+                    return True
+                return False
+
+            def keep_loop(self, message):
+                return False
+
         self.assert_UI(GeneralUI4test)
 
     def test_CLI(self):
-        for m in self.messages:
-            self.stub_stdin('input')
-            self.stub_stdouts()
-            conversation = self.factory_conversations(self.pos_inputs[0][0],
-                                                      self.pos_inputs[1][0],
-                                                      self.pos_inputs[2][0])
-            cli_handler = TerminalUIHandler(self.handler_db, conversation)
-            cli_handler.interact(m, False)
-            cli_handler.interact(m, True)
+        for m_i in self.messages:
+            for m in self.messages:
+                self.stub_stdin('input')
+                self.stub_stdouts()
+                conversation =\
+                    self.factory_conversations(m_i, self.pos_inputs[1][0])
+                cli_handler = TerminalUIHandler(self.handler_db, conversation)
+                cli_handler.interact(m, False)
+                cli_handler.interact(m, True)
+                cli_handler._reflection_information(m_i, m)
 
-            self.doCleanups()
+                self.doCleanups()
