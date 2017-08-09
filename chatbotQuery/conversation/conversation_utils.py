@@ -227,9 +227,8 @@ class QuerierSplitterChooser(BaseChooser):
 class TransitionConversationStates(object):
 
     def __init__(self, name_trans_states, condition):
-        assert(callable(condition))
-        self.condition = condition
-        self.transitions = name_trans_states
+        self._format_condition(condition)
+        self._format_transitions(name_trans_states)
         self.currentstate = None
 
     @classmethod
@@ -244,6 +243,18 @@ class TransitionConversationStates(object):
             if transition_info.condition is None:
                 return NullTransitionConversation()
             return cls(transition_info.transitions, transition_info.condition)
+
+    def _format_condition(self, condition):
+        assert(callable(condition))
+        self.condition = condition
+
+    def _format_transitions(self, name_trans_states):
+        if type(name_trans_states) in [list, tuple]:
+            self.transitions = name_trans_states
+        elif type(name_trans_states) == str:
+            self.transitions = [name_trans_states]
+        else:
+            raise TypeError("Not correct transition states input.")
 
     def set_current_state(self, conversationstate):
         self.currentstate = conversationstate.name

@@ -31,6 +31,7 @@ class BaseConversationState(object):
 #        self.transition_states = self.transition.transitions
         self.next_state = self.name
         self.tags = None
+        self.runned = False
 
     @property
     def next_states(self):
@@ -50,19 +51,19 @@ class BaseConversationState(object):
     def _compute_next(self, message):
         self.next_state = self.next(message)
 
-    def _if_sent(self, message):
-        ifsent = False
-        if 'sending_status' in message:
-            ifsent = message['sending_status']
-        return ifsent
+#    def _if_sent(self, message):
+#        ifsent = False
+#        if 'sending_status' in message:
+#            ifsent = message['sending_status']
+#        return ifsent
+
+#    def get_tags(self):
+#        return self.tags
 
     def _format_tags(self, tags):
         if type(tags) == str:
             tags = [tags]
         self.tags = tags
-
-    def get_tags(self):
-        return self.tags
 
     def restart(self):
         pass
@@ -105,7 +106,7 @@ class BaseConversationState(object):
         elif isinstance(state, GeneralConversationState):
             return state
         else:
-            Exception("Error")
+            raise Exception("Error")
 
     def _pathname_formatter(self, name):
         return name.replace(' ', '_')
@@ -162,7 +163,7 @@ class GeneralConversationState(BaseConversationState):
     def _manage_next_state(self, message):
         self.counts += 1
         if self.flag_question_answer == 0:
-            self._manage_limited_runs(self.flag_question_answer)
+            self._manage_limited_runs()
             if not self.asker:
                 self._compute_next(message)
                 self.runned = True
@@ -170,7 +171,7 @@ class GeneralConversationState(BaseConversationState):
                 self.runned = False
                 self.next_state = self.name
         elif self.flag_question_answer == 1:
-            self._manage_limited_runs(self.flag_question_answer)
+            self._manage_limited_runs()
             if self.asker:
                 self._compute_next(message)
                 self.runned = True
@@ -181,11 +182,11 @@ class GeneralConversationState(BaseConversationState):
 #        if self.shadow:
 #            self.runned = True
 
-    def _manage_limited_runs(self, actual_flag):
+    def _manage_limited_runs(self):
         if self.running_times <= self.counts:
             self.flag_question_answer = 2
         else:
-            self.flag_question_answer = int(abs(actual_flag-1))
+            self.flag_question_answer = int(abs(self.flag_question_answer-1))
 
     def _answer_message(self, handler_db, message):
         ## 0. Make query
@@ -215,7 +216,7 @@ class GeneralConversationState(BaseConversationState):
     def _message_formatting(self, handler_db, message):
         formatting_tags = handler_db.profile_user.profile
         formatting_tags.update(handler_db.get_last_query())
-        ## TEMPORAL
+        ## TEMPORAL: REFACTOR into message
         if 'query' in message:
             if message['query'] is not None:
                 if 'answer_names' in message['query']:
@@ -239,21 +240,22 @@ class GeneralConversationState(BaseConversationState):
             return message['sending_status']
         return True
 
-    def _preformat_messages(self, message):
-        if not self._detect_message_sending_status(message):
-            if not message['collection']:
-                message['message'] = [copy.copy(message)]
-                message['collection'] = True
-                return message
-        return message
+#    def _preformat_messages(self, message):
+#        if not self._detect_message_sending_status(message):
+#            if not message['collection']:
+#                message['message'] = [copy.copy(message)]
+#                message['collection'] = True
+#                return message
+#        return message
 
     def _add_tags(self, message):
-        if self.tags is not None:
-            if 'tags' in message:
-                message['tags'] += self.tags
-                message['tags'] = list(set(message['tags']))
-            else:
-                message['tags'] = self.tags
+        message = message.add_tags(self.tags)
+#        if self.tags is not None:
+#            if 'tags' in message:
+#                message['tags'] += self.tags
+#                message['tags'] = list(set(message['tags']))
+#            else:
+#                message['tags'] = self.tags
         return message
 
     @property
@@ -269,7 +271,7 @@ class GeneralConversationState(BaseConversationState):
         return (not self.shadow)
 
     @property
-    def currentChildernState(self):
+    def currentChildrenState(self):
         return None
 
     def restart(self):
@@ -463,7 +465,8 @@ class ConversationStateMachine(BaseConversationState):
         return list(flatten(l))
 
     def restart(self):
-        self.currentState = self.get_initial_state()
+        self.set_machine()
+#        self.currentState = self.get_initial_state()
         self.endStates = self.initial_endStates
         self.historyStates = [self.startState]
         [self.states[s].restart() for s in self.states]

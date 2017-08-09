@@ -79,6 +79,11 @@ class Test_Transitions(unittest.TestCase):
         transition.set_current_state(self.conversationstate)
         self.assert_transition(transition)
 
+    def test_instantiation(self):
+        TransitionConversationStates('transition', lambda x: 0)
+        with self.assertRaises(TypeError):
+            TransitionConversationStates(8, lambda x: 0)
+
 
 class Test_Choosers(unittest.TestCase):
     """Testing and standarization over chooser administrator.
