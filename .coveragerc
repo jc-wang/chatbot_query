@@ -1,4 +1,7 @@
 [report]
 show_missing = True
+exclude_lines = from chatbotQuery.parameters_processing import create_testing_mode_parameters
+
 omit = 
 	chatbotQuery/release.py
+	chatbotQuery/src
