@@ -1,6 +1,8 @@
 
 
 import time
+from chatbotQuery.io import parse_configuration_file_db
+from chatbotQuery.dbapi import DataBaseAPI
 
 datetime_format = '%Y-%m-%d %H:%m:%S %z'
 
@@ -38,9 +40,22 @@ class HandlerConvesationDB(object):
             pass
         elif type(databases) == dict:
             self.databases.update(databases)
+            for d, v in self.databases.items():
+                if isinstance(v, dict):
+                    self.databases[d] = DataBaseAPI.from_parameters(v)
+#                assert(isinstance(self.databases[d], DataBaseAPI))
         else:
             ## It should be DataBaseAPI object
             self.databases = {'db': databases}
+
+    @classmethod
+    def from_file(cls, configuration_file):
+        parameters = parse_configuration_file_db(configuration_file)
+        return cls.from_parameters(parameters)
+
+    @classmethod
+    def from_parameters(cls, parameters):
+        return HandlerConvesationDB(**parameters)
 
     def store_query(self, message, database='db'):
         if type(message['message']) == list:

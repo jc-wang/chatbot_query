@@ -12,14 +12,16 @@ import time
 
 
 def run_flask_app_conversation(asking_f):
-    app = Flask(__name__, template_folder='../../templates')
+    app = Flask(__name__, template_folder='../../assets/templates')
 
     @app.route("/")
     def index():
-        return render_template("chat2.html")
+        return render_template("chat.html")
 
     @app.route("/ask", methods=['POST'])
     def ask():
+        def jsonify_message(messageDict):
+            return {'status': 'OK', 'answer': str(messageDict['message'])}
         exited = False
         if exited:
             time.sleep(60)
@@ -33,6 +35,11 @@ def run_flask_app_conversation(asking_f):
                 if (answer is None) or exited:
                     exited = True
                 else:
-                    bot_response = str(answer['message'])
-                    return jsonify({'status': 'OK', 'answer': bot_response})
+                    if answer['collection']:
+                        answers_json = []
+                        for answer_e in answer['message']:
+                            answers_json.append(jsonify_message(answer_e))
+                        return jsonify(*answers_json)
+                    else:
+                        return jsonify(jsonify_message(answer))
     app.run(debug=True, host='0.0.0.0', port=5000)
