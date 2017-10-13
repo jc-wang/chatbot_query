@@ -291,7 +291,7 @@ def generate_html_transitions_table(transitions_table):
 
 
 def prepare_treestates(treestates):
-    root = nx.topological_sort(treestates)[0]
+    root = list(nx.topological_sort(treestates))[0]
     # create empty tree to fill
     tree = {"name": root}
     # fill in tree starting with roots (those with no parent)
