@@ -18,18 +18,19 @@ from chatbotQuery.conversation.conversation_utils import RandomChooser,\
     NullChooser, BaseChooser
 from chatbotQuery.conversation.conversation_utils import\
     NullTransitionConversation, TransitionConversationStates
+from chatbotQuery.conversation.conversation_utils import flatten_1lvl
 from chatbotQuery import ChatbotMessage
 
 
 class BaseConversationState(object):
 
-    def __init__(self, name, transition):
+    def __init__(self, name, transition, endstates=None, shadow=True,
+                 test_mode=False):
         self.name = name
-        self.transition =\
-            TransitionConversationStates.from_transition_info(transition)
-        self.transition.set_current_state(self)
+        self._format_transitions(transition, endstates, shadow, test_mode)
 #        self.transition_states = self.transition.transitions
-        self.next_state = self.name
+        self._format_interaction(shadow, test_mode)
+        self.next_state = self.name[:]
         self.tags = None
         self.runned = False
 
@@ -41,15 +42,61 @@ class BaseConversationState(object):
     def parentState(self):
         return '.'.join(self.abspathname.split('.')[:-1])
 
-    def next(self, message):
-        "TODO: history"
+    def _format_interaction(self, shadow, test_mode):
+        ## External control information
+        if isinstance(self, BaseConversationState):
+            self.posting = False
+            if test_mode:
+                self.shadow = False
+            else:
+                self.shadow = shadow
+
+    def _format_transitions(self, transition, endstates, shadow, test_mode):
+        def if_multiple_transitions(endstates):
+            logi = False
+            if isinstance(endstates, list):
+                if all([isinstance(e, list) for e in endstates]):
+                    logi = True
+            return logi
+        if if_multiple_transitions(endstates):
+            assert(endstates is not None)
+            self.transition = {}
+            for i, tr in enumerate(transition):
+                if test_mode:
+                    trans_i = TransitionConversationStates.\
+                        test_from_transition_info(tr)
+                else:
+                    trans_i =\
+                        TransitionConversationStates.from_transition_info(tr)
+                for endi in endstates[i]:
+                    endi = self._pathname_formatter(endi)
+                    self.transition[endi] = trans_i
+        else:
+            if test_mode:
+                self.transition = TransitionConversationStates.\
+                    test_from_transition_info(transition)
+            else:
+                self.transition = TransitionConversationStates.\
+                    from_transition_info(transition)
+            self.transition.set_current_state(self)
+
+    def next(self, message, sonparentstate=None):
+        "TODO: history?"
         if self.runned:
             return None
-        next_state_name = self.transition.next_state(message)
+
+        if isinstance(self.transition, dict):
+            assert(sonparentstate is not None)
+            sonparentstate_name = sonparentstate.split('.')[-1]
+            next_state_name =\
+                self.transition[sonparentstate_name].next_state(message)
+        else:
+            next_state_name = self.transition.next_state(message)
+
         return next_state_name
 
-    def _compute_next(self, message):
-        self.next_state = self.next(message)
+    def _compute_next(self, message, sonparentstate=None):
+        self.next_state = self.next(message, sonparentstate)
 
 #    def _if_sent(self, message):
 #        ifsent = False
@@ -114,10 +161,16 @@ class BaseConversationState(object):
 
 class GeneralConversationState(BaseConversationState):
 
+    required_pars = ('name', )
+    default_pars = {'detector': None, 'chooser': None, 'querier': None,
+                    'transition': None, 'asker': True, 'tags': None,
+                    'shadow': False, 'running_times': np.inf,
+                    'test_mode': False}
+
     def __init__(self, name, detector=None, chooser=None, querier=None,
                  transition=None, asker=True, tags=None, shadow=False,
-                 running_times=np.inf):
-        super().__init__(name, transition)
+                 running_times=np.inf, test_mode=False):
+        super().__init__(name, transition, test_mode=test_mode, shadow=shadow)
         ## Initialize core elements
         self.detector = BaseDetector.from_detector_info(detector)
         self.chooser = BaseChooser.from_chooser_info(chooser)
@@ -136,9 +189,6 @@ class GeneralConversationState(BaseConversationState):
         else:
             self.flag_question_answer = 1
         self.runned = False
-        ## External control information
-        self.shadow = shadow
-        self.posting = False
         ## Next state
         self.next_state = self.name
         ## TODO: shadow and asker?
@@ -299,16 +349,22 @@ class GeneralConversationState(BaseConversationState):
 ###############################################################################
 class ConversationStateMachine(BaseConversationState):
 
-    def __init__(self, name, states, startState, endStates, transition=None):
-        super().__init__(name, transition)
+    required_pars = ('name', 'states', 'startState', 'endStates')
+    default_pars = {'transition': None}
+
+    def __init__(self, name, states, startState, endStates, transition=None,
+                 test_mode=False):
         ## Managing states
+        states = self._format_states(states)
         state_names = [state.name for state in states]
         endStates = endStates if type(endStates) == list else [endStates]
         assert(startState in state_names)
-        assert(all([s in state_names for s in endStates]))
+        assert(all([s in state_names for s in flatten_1lvl(endStates)]))
         # Initial configuration
         self.startState = startState
-        self.initial_endStates = copy.copy(endStates)
+        self.initial_endStates = flatten_1lvl(copy.copy(endStates))
+        #### Initial transitions
+        super().__init__(name, transition, endStates, True, test_mode)
         # States tracked
         self.currentState = startState
         self.endStates = endStates
@@ -327,6 +383,42 @@ class ConversationStateMachine(BaseConversationState):
         self.setted = False
         self.runned = False
 
+    @classmethod
+    def from_parameters(cls, parameters):
+        if not isinstance(parameters, dict):
+            parameters = parameters[0]
+        proper_pars = copy.copy(cls.default_pars)
+        for k, v in parameters.items():
+            if k in list(cls.required_pars)+list(cls.default_pars.keys()):
+                proper_pars[k] = v
+        return ConversationStateMachine(**proper_pars)
+
+    @classmethod
+    def _format_states(cls, states):
+        for i, s in enumerate(states):
+            if not isinstance(s, BaseConversationState):
+                assert(isinstance(s, dict))
+                if 'state_object' in s:
+                    obj = eval(s['state_object'])
+                else:
+                    if 'states' in s:
+                        obj = ConversationStateMachine
+                    else:
+                        obj = GeneralConversationState
+                states[i] = obj(**cls._format_parameters(s, obj))
+        return states
+
+    @classmethod
+    def _format_parameters(cls, paramaters, obj):
+        pos_pars = list(obj.required_pars)+list(obj.default_pars.keys())
+        for p in obj.required_pars:
+            assert(p in paramaters.keys())
+        new_pars = obj.default_pars
+        for p in paramaters:
+            if p in pos_pars:
+                new_pars[p] = paramaters[p]
+        return new_pars
+
 #    @property
 #    def runned(self):
 #        return self.in_ending_state and self.is_current_state_runned
@@ -340,7 +432,7 @@ class ConversationStateMachine(BaseConversationState):
         return self.states[self.currentState].runned
 
     def _force_post_in_ending_states(self):
-        for endstatename in self.endStates:
+        for endstatename in flatten_1lvl(self.endStates):
             endState = self.states[endstatename]
             if isinstance(endState, GeneralConversationState):
                 endState.posting = True
@@ -407,13 +499,18 @@ class ConversationStateMachine(BaseConversationState):
         next_state = currentstate.next_state
         if next_state is None:
             ## Transition between 1 ended bottom and 1 initial bottom states
-            parentstate =\
-                self._get_parentState_transitioner(currentstate.abspathname)
+            ########## Dealing with multiple transition functions ##########
+            currentstatepath = currentstate.abspathname
+            parentstate = self._get_parentState_transitioner(currentstatepath)
             # Global ending state Case
             if parentstate is None:
                 return None
+            sonparentstate =\
+                self._get_son_of_parentstate_transitioner(currentstatepath,
+                                                          parentstate)
             # Get the next top parent state
-            self.all_states_d[parentstate]._compute_next(message)
+            self.all_states_d[parentstate]._compute_next(message,
+                                                         sonparentstate)
             self.all_states_d[parentstate].runned = True
             next_parent = self.all_states_d[parentstate].next_state
             # Global ending state Case
@@ -435,6 +532,11 @@ class ConversationStateMachine(BaseConversationState):
         if currentstate.NotEnter:
             currentstate = None
         return currentstate
+
+    def _get_son_of_parentstate_transitioner(self, statename, parentname):
+        m_len = len(parentname.split('.'))+1
+        sonparentstate = '.'.join(statename.split('.')[:m_len])
+        return sonparentstate
 
     def _get_parentState_transitioner(self, statename):
         ## TODO: track functions for each parent state
@@ -494,13 +596,13 @@ class ConversationStateMachine(BaseConversationState):
         if self.states[self.currentState].runned:
             self._compute_next(message)
 
-    def _force_next_state(self, message):
-        while True:
-            currentstate = self.currentState
-            self._compute_next(message)
-            if currentstate != self.currentState:
-                break
-        return self.currentState
+#    def _force_next_state(self, message):
+#        while True:
+#            currentstate = self.currentState
+#            self._compute_next(message)
+#            if currentstate != self.currentState:
+#                break
+#        return self.currentState
 
     @property
     def currentChildernState(self):
@@ -512,11 +614,15 @@ class ConversationStateMachine(BaseConversationState):
 class AnsweringState(GeneralConversationState):
     """
     """
+    required_pars = ('name', 'chooser')
+    default_pars = {'detector': None, 'transition': None, 'tags': None,
+                    'shadow': False, 'test_mode': False}
 
     def __init__(self, name, chooser, detector=None, transition=None,
-                 tags=None, shadow=False):
+                 tags=None, shadow=False, test_mode=False):
         super().__init__(name, detector, chooser, transition=transition,
-                         asker=False, tags=tags, shadow=shadow)
+                         asker=False, tags=tags, shadow=shadow,
+                         test_mode=test_mode)
 #        ## Conversation states
 #        self.questions = chooser.candidates
         self.next_tags = tags
@@ -526,11 +632,15 @@ class AnsweringState(GeneralConversationState):
 class QuestioningState(GeneralConversationState):
     """
     """
+    required_pars = ('name', 'chooser')
+    default_pars = {'detector': None, 'transition': None, 'tags': None,
+                    'shadow': False, 'test_mode': False}
 
     def __init__(self, name, chooser, detector=None, transition=None,
-                 tags=None, shadow=False):
+                 tags=None, shadow=False, test_mode=False):
         super().__init__(name, detector, chooser, transition=transition,
-                         asker=True, tags=tags, shadow=shadow)
+                         asker=True, tags=tags, shadow=shadow,
+                         test_mode=test_mode)
 #        ## Conversation states
 #        self.questions = chooser.candidates
         self.next_tags = tags
@@ -540,11 +650,15 @@ class QuestioningState(GeneralConversationState):
 class TalkingState(GeneralConversationState):
     """State that manage the interaction with the user.
     """
+    required_pars = ('name', 'chooser')
+    default_pars = {'detector': None, 'transition': None, 'asker': True,
+                    'tags': None, 'shadow': False, 'test_mode': False}
 
     def __init__(self, name, chooser, detector=None, transition=None,
-                 asker=True, tags=None, shadow=False):
+                 asker=True, tags=None, shadow=False, test_mode=False):
         super().__init__(name, detector, chooser, transition=transition,
-                         asker=asker, tags=tags, shadow=shadow)
+                         asker=asker, tags=tags, shadow=shadow,
+                         test_mode=test_mode)
 #        ## Conversation states
 #        self.questions = chooser.candidates
         self.next_tags = tags
@@ -562,21 +676,26 @@ class TalkingState(GeneralConversationState):
 class StoringState(GeneralConversationState):
     """Interacts with the storage without interacting with the user.
     """
+    required_pars = ('name', 'storer')
+    default_pars = {'transition': None, 'test_mode': False}
 
-    def __init__(self, name, storer, transition=None):
+    def __init__(self, name, storer, transition=None, test_mode=False):
         super().__init__(name, querier=storer, transition=transition,
-                         asker=False, shadow=True)
+                         asker=False, shadow=True, test_mode=test_mode)
 
 
 class QuerierState(GeneralConversationState):
     """Interface with the database to get the query you want to obtain.
     """
+    required_pars = ('name', 'querier', 'chooser')
+    default_pars = {'detector': None, 'transition': None, 'tags': None,
+                    'shadow': False, 'test_mode': False}
 
     def __init__(self, name, querier, chooser, detector=None, transition=None,
-                 tags=None, shadow=False):
+                 tags=None, shadow=False, test_mode=False):
         super().__init__(name, detector=detector, chooser=chooser,
                          querier=querier, transition=transition, asker=True,
-                         tags=tags, shadow=shadow)
+                         tags=tags, shadow=shadow, test_mode=test_mode)
 #        self.restart()
 
 
@@ -584,7 +703,9 @@ class CheckerState(GeneralConversationState):
     """Acts as a control flow in the ConversationStateMachine without
     interacting with the user.
     """
+    required_pars = ('name', 'checker')
+    default_pars = {'transition': None, 'test_mode': False}
 
-    def __init__(self, name, checker, transition=None):
+    def __init__(self, name, checker, transition=None, test_mode=False):
         super().__init__(name, querier=checker, transition=transition,
-                         asker=False, shadow=True)
+                         asker=False, shadow=True, test_mode=test_mode)
