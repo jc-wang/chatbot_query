@@ -6,6 +6,7 @@ import os
 import copy
 
 from chatbotQuery.dbapi import DataBaseAPI
+from chatbotQuery.io import parse_configuration_file_dbapi
 
 
 ### Auxiliar functions
@@ -99,7 +100,18 @@ class Test_DataBaseAPI(unittest.TestCase):
         self.create_pre = lambda x: {'query_idxs': x,
                                      'query_result': {'query_type': True}}
 
-    def query_test(self):
+        ## Files to test
+        package_path =\
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.example_db_yaml =\
+            os.path.join(os.path.dirname(package_path),
+                         'examples/example_dbparser/db_connection.yml')
+
+    def test_instance_from_parameters(self):
+        parameters = parse_configuration_file_dbapi(self.example_db_yaml)
+        DataBaseAPI.from_parameters(parameters)
+
+    def test_query(self):
         ## Query for categories
         ids_cat, pars = self.data.query(self.keywords_cat)
         ids_cat, pars =\
@@ -119,7 +131,7 @@ class Test_DataBaseAPI(unittest.TestCase):
         ## Get label
         labels = self.data.get_label(ids)
 
-    def complete_query_test(self):
+    def test_complete_query(self):
         q_cat = self.data.get_query_info(self.keywords_cat)
         q_main = self.data.get_query_info(self.keywords_main)
 
@@ -140,5 +152,5 @@ class Test_DataBaseAPI(unittest.TestCase):
         q_info = self.data.get_query_info(self.keywords_main,
                                           pre=q_main['query'])
 
-    def get_message_reflection_test(self):
+    def test_get_message_reflection(self):
         self.data.get_reflection_query(self.message)

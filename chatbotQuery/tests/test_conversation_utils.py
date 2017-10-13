@@ -46,23 +46,56 @@ class Test_Transitions(unittest.TestCase):
         conversationstate.configure_mock(name="example")
         self.conversationstate = conversationstate
 
-    def assert_transition(self, transtion):
+    def assert_transition(self, transition):
         for message in self.responses:
-            statename = transtion.next_state(message)
+            statename = transition.next_state(message)
+            self.assertIsInstance(statename, str)
+
+    def assert_t_mode_transition(self, transition):
+        responses = [{'message': str(i)}
+                     for i in range(len(transition.transitions))]
+        responses = [ChatbotMessage.from_candidates_messages(r)
+                     for r in responses]
+        for message in responses:
+            statename = transition.next_state(message)
             self.assertIsInstance(statename, str)
 
     def test_general_trastions(self):
-        # Testing transtion
+        # Testing transition
         general_transition = TransitionConversationStates(self.transitions,
                                                           self.function)
         general_transition.set_current_state(self.conversationstate)
         self.assert_transition(general_transition)
 
     def test_null_transition(self):
-        # Null testing transtion
+        # Null testing transition
         null_transition = NullTransitionConversation()
         null_transition.set_current_state(self.conversationstate)
         self.assert_transition(null_transition)
+
+    def test_base_testing_transitions(self):
+        transition = TransitionConversationStates.\
+            test_from_transition_info(None)
+        transition.set_current_state(self.conversationstate)
+        self.assert_t_mode_transition(transition)
+
+        pars = [self.transitions, self.function]
+        transition = TransitionConversationStates.\
+            test_from_transition_info(pars)
+        transition.set_current_state(self.conversationstate)
+        self.assert_t_mode_transition(transition)
+
+        pars = {'transition_object': 'NullTransitionConversation',
+                'transition_states': self.transitions}
+        transition = TransitionConversationStates.\
+            test_from_transition_info(pars)
+        transition.set_current_state(self.conversationstate)
+        self.assert_t_mode_transition(transition)
+
+        transition =\
+            TransitionConversationStates.test_from_transition_info(transition)
+        transition.set_current_state(self.conversationstate)
+        self.assert_t_mode_transition(transition)
 
     def test_base_transitions(self):
         transition = TransitionConversationStates.from_transition_info(None)
@@ -70,6 +103,19 @@ class Test_Transitions(unittest.TestCase):
         self.assert_transition(transition)
 
         pars = [self.transitions, self.function]
+        transition = TransitionConversationStates.from_transition_info(pars)
+        transition.set_current_state(self.conversationstate)
+        self.assert_transition(transition)
+
+        pars = {'name_trans_states': self.transitions,
+                'condition': self.function}
+        transition = TransitionConversationStates.from_transition_info(pars)
+        transition.set_current_state(self.conversationstate)
+        self.assert_transition(transition)
+
+        pars = {'transition_object': 'TransitionConversationStates',
+                'transition_states': self.transitions,
+                'transition_function': self.function}
         transition = TransitionConversationStates.from_transition_info(pars)
         transition.set_current_state(self.conversationstate)
         self.assert_transition(transition)

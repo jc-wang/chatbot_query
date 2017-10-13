@@ -1,4 +1,5 @@
 
+import os
 import unittest
 import copy
 #import mock
@@ -68,6 +69,12 @@ class Test_HandlerConvesationDB(unittest.TestCase):
              ChatbotMessage(m2), ChatbotMessage(m3), m4, m5]
         self.message = {'message': 'No', 'collection': True, 'query': {}}
 
+        package_path =\
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.example_db_hand_yaml =\
+            os.path.join(os.path.dirname(package_path),
+                         'examples/example_dbparser/db_handler_parameters.yml')
+
     def assert_handlerdb(self, handlerdb):
         for m in self.messages:
             for p in product(*self.pos_query_messages):
@@ -87,3 +94,7 @@ class Test_HandlerConvesationDB(unittest.TestCase):
             pars = dict(zip(self.variables, p))
             handler_db = HandlerConvesationDB(**pars)
             self.assert_handlerdb(handler_db)
+
+    def test_handling_db_from_file(self):
+        handler_db = HandlerConvesationDB.from_file(self.example_db_hand_yaml)
+        self.assert_handlerdb(handler_db)

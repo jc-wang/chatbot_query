@@ -2,6 +2,7 @@
 import unittest
 import sys
 import io
+import os
 import copy
 #from io import StringIO
 from unittest import mock
@@ -71,6 +72,15 @@ class Test_HandlerConvesationDB(unittest.TestCase):
         self.pos_inputs =\
             [[None]+self.messages, [True]]
 
+        package_path =\
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.example_yaml =\
+            os.path.join(os.path.dirname(package_path),
+                         'examples/example_dbparser/dbparser_parameter.yml')
+        self.example_db_hand_yaml =\
+            os.path.join(os.path.dirname(package_path),
+                         'examples/example_dbparser/db_handler_parameters.yml')
+
     def stub_stdin(self, inputs):
         stdin = sys.stdin
 
@@ -139,3 +149,8 @@ class Test_HandlerConvesationDB(unittest.TestCase):
                 cli_handler._reflection_information(m_i, m)
 
                 self.doCleanups()
+
+    def test_instantiation_from_configurationfiles(self):
+        HandlerConvesationUI.\
+            from_configuration_files(self.example_db_hand_yaml,
+                                     self.example_yaml)
