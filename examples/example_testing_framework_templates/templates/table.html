@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include 'header_table.html' %}
+</head>
+<body>
+
+  {% include 'navigator.html' %}
+
+<div class="container">
+  <h3>{{name_title}}</h3>
+
+  {% include 'filter_table_script.html' %}
+  {{table|safe}}
+
+</div>
+
+</body>
+</html>

@@ -260,35 +260,35 @@ if __name__ == "__main__":
                                tags=['query'], transition=query_trans,
                                shadow=True))
 
-    ## Defining 'Ensure categories' state
-    q_null = [{'message': ''}]
-    chooser_null = SequentialChooser(q_null)
-    trans_states = ['Querier DB']
-    cond_trans = create_fixed_condition(0)
-    trans_cats_sure = TransitionConversationStates(trans_states, cond_trans)
-#    states.append(CheckerState('Ensure categories', checker_cats_sure,
-#                               transition=trans_cats_sure))
-    states.append(QuestioningState('Ensure categories',
-                                   chooser_null,
-                                   transition=trans_cats_sure,
-                                   shadow=False))
+#    ## Defining 'Ensure categories' state
+#    q_null = [{'message': ''}]
+#    chooser_null = SequentialChooser(q_null)
+#    trans_states = ['Querier DB']
+#    cond_trans = create_fixed_condition(0)
+#    trans_cats_sure = TransitionConversationStates(trans_states, cond_trans)
+##    states.append(CheckerState('Ensure categories', checker_cats_sure,
+##                               transition=trans_cats_sure))
+#    states.append(QuestioningState('Ensure categories',
+#                                   chooser_null,
+#                                   transition=trans_cats_sure,
+#                                   shadow=False))
 
-    ## Defining 'Store categories' state
-    cond_trans = create_fixed_condition(0)
-    trans_states = ['ReAsker']
-    trans_storename = TransitionConversationStates(trans_states, cond_trans)
-    states.append(StoringState('Store categories', storer_query,
-                               trans_storename))
-
-    ## Defining 'ReAsker' state
-    ## Define a yes_no final asker
-    q_reasker = [{'message': m} for m in QUESTIONS_REASKER]
-    cond_trans = create_fixed_condition(0)
-    trans_states = ['Querier DB']
-    trans_reask = TransitionConversationStates(trans_states, cond_trans)
-    chooser_end = SequentialChooser(q_reasker)
-    states.append(TalkingState('ReAsker', chooser_end,
-                               transition=trans_reask))
+#    ## Defining 'Store categories' state
+#    cond_trans = create_fixed_condition(0)
+#    trans_states = ['ReAsker']
+#    trans_storename = TransitionConversationStates(trans_states, cond_trans)
+#    states.append(StoringState('Store categories', storer_query,
+#                               trans_storename))
+#
+#    ## Defining 'ReAsker' state
+#    ## Define a yes_no final asker
+#    q_reasker = [{'message': m} for m in QUESTIONS_REASKER]
+#    cond_trans = create_fixed_condition(0)
+#    trans_states = ['Querier DB']
+#    trans_reask = TransitionConversationStates(trans_states, cond_trans)
+#    chooser_end = SequentialChooser(q_reasker)
+#    states.append(TalkingState('ReAsker', chooser_end,
+#                               transition=trans_reask))
 
     ## Defining 'Explore products' state
     q_explore_products = [{'message': m} for m in QUESTION_EXTRA_Q]
@@ -323,15 +323,15 @@ if __name__ == "__main__":
                                    transition=trans_explore,
                                    shadow=False))
 
-    ## Defining 'Show Prices' state
-    cond_trans = create_fixed_condition(0)
-    trans_states = ['Keep Trying']
-    chooser_query = QuerierSplitterChooser(QUESTIONS_QUERY_DB, 'level_query',
-                                           lambda x: 2,
-                                           query_var='query_idxs')
-    query_trans = TransitionConversationStates(trans_states, cond_trans)
-    states.append(QuerierState('Show Prices', querier_prices_f, chooser_query,
-                               tags=['query'], transition=query_trans))
+#    ## Defining 'Show Prices' state
+#    cond_trans = create_fixed_condition(0)
+#    trans_states = ['Keep Trying']
+#    chooser_query = QuerierSplitterChooser(QUESTIONS_QUERY_DB, 'level_query',
+#                                           lambda x: 2,
+#                                           query_var='query_idxs')
+#    query_trans = TransitionConversationStates(trans_states, cond_trans)
+#    states.append(QuerierState('Show Prices', querier_prices_f, chooser_query,
+#                               tags=['query'], transition=query_trans))
 
     ## Defining 'Keep Trying' state
     ## Define a yes_no keep trying

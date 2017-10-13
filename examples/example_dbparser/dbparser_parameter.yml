@@ -1,0 +1,10 @@
+
+-
+    name: Conversation
+    state_object: ConversationStateMachine
+    startState: Hello
+    endStates: 
+            - Say goodbye
+    states:
+        - query_conversation_parameter.yml
+        - salutations_parameter.yml

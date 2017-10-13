@@ -1,0 +1,45 @@
+
+data_info: products.csv
+type_vars:
+        main_var:
+            name: Product Name
+            codename: productname
+        cat_vars:
+            name:
+                - Brand
+                - Category
+            codename:
+                - brand
+                - category
+        label_var:
+            name: Subscription Plan 
+
+responses_formatter:
+        main_var:
+            - 
+                filepath: aux_functions.py
+                function_name: retrieve_text_main_var
+            - query_productnames
+        cat_vars:
+            Brand: 
+                filepath: aux_functions.py
+                function_name: joiner_brands
+            Category:
+                filepath: aux_functions.py
+                function_name: joiner_categories
+        label_var:
+            - 
+                filepath: aux_functions.py
+                function_name: retrieve_text_label_var
+            - query_productnames
+
+        join_cats:
+            - 
+                filepath: aux_functions.py
+                function_name: category_joiner
+            -  query_catnames
+
+parameter_formatter:
+        label:
+            filepath: aux_functions.py
+            function_name: price_q_keywords

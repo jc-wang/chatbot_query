@@ -1,0 +1,20 @@
+
+-
+    -
+        filepath: null_file.txt
+        type: keywords
+    -
+        filepath: products.csv
+        type: table
+        include:
+            - Product Name
+            - Brand
+            - Category
+        exclude: null
+    -
+        filepath: null_file.txt
+        type: text
+-
+    -
+        filepath: null_file.txt
+        type: keywords

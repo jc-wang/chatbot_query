@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<answer_collection>
+    <answer>
+        <message>Are you interested in something new? Which products?</message>
+    </answer>
+    <answer>
+        <message>Do you want me to find something? Which products?</message>
+    </answer>
+    <answer>
+        <message>What are the products you are interested in?</message>
+    </answer>
+</answer_collection>

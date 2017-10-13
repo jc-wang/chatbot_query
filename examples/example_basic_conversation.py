@@ -20,7 +20,8 @@ from chatbotQuery.conversation import TalkingState, SequentialChooser,\
 from chatbotQuery.aux_functions import create_probsplitter_condition,\
     create_fixed_condition, yes_no_answer
 
-from chatbotQuery.ui import HandlerConvesationDB, TerminalUIHandler
+from chatbotQuery.ui import HandlerConvesationDB, TerminalUIHandler,\
+    FlaskUIHandler
 
 
 ### HELLO QUESTIONS
@@ -200,7 +201,7 @@ if __name__ == "__main__":
 
     handler_db = HandlerConvesationDB()
 #    handler_db.profile_user.profile = {'username': 'antonio'}
-    handler_ui = TerminalUIHandler(handler_db, general_conv)
-#    handler_ui = FlaskUIHandler(handler_db, general_conv)
+#    handler_ui = TerminalUIHandler(handler_db, general_conv)
+    handler_ui = FlaskUIHandler(handler_db, general_conv)
 
     handler_ui.run()

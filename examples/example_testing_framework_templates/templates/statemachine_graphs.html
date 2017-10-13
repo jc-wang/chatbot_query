@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Testing Dashboard</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="/static/commons/css/bootstrap.min.css">
+    <script src="/static/commons/js/jquery.min.js"></script>
+    <script src="/static/commons/js/bootstrap.min.js"></script>
+    <!-- load the d3.js library --> 
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+  {% include 'complete_graph_style.html' %}
+
+</head>
+
+
+<body>
+<!--  -->
+<!--  -->
+
+{% include 'navigator.html' %}
+
+  <h3>Conversation StateMachine Graphs</h3>
+
+<div id="buttoms" class="div-inline">
+  <select id="inds">
+    <option value={{defaultmachine}} selected="selected">{{defaultmachine}}</option>
+      {% for smachine in statemachines %}
+        {% if smachine is defined %}
+        <option value="{{smachine}}">{{smachine}}</option>
+        {% endif %}
+      {% endfor %}
+  </select>
+  <input name="showAllButton"
+    type="button"
+    value="Show All"
+    onclick="showAll()" />
+  <input name="clearAllButton"
+    type="button"
+    value="Clear All"
+    onclick="clearAll()" />
+</div>
+
+<div id="container" class="svg-container">
+  {% include 'statemachine_graphs_script.html' %}
+</div>
+
+</body>
+</html>

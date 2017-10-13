@@ -1,0 +1,7 @@
+
+profile_user: null
+logging_file: null
+databases:
+    - 
+        name: db
+        filepath: db_connection.yml

@@ -1,0 +1,148 @@
+
+-
+    name: Query Conversation
+    state_object: ConversationStateMachine
+    startState: Hello DB
+    endStates: 
+            -
+                - Closing Check
+    transition:
+        - 
+            transition_object: TransitionConversationStates
+            transition_states:
+                    - Final Asker
+            transition_function:
+                    filepath: aux_functions.py
+                    function_name: create_fixed_condition
+                    function_parameters:
+                        selected: 0
+
+    states:
+        -
+            name: Hello DB
+            state_object: TalkingState
+            chooser:
+                filepath: Answers/QueryConversation/QUESTIONS_SALUT_DB.xml
+                chooser_object: SequentialChooser
+            transition:
+                transition_object: TransitionConversationStates
+                transition_states:
+                        - Querier DB
+                transition_function:
+                        filepath: aux_functions.py
+                        function_name: create_fixed_condition
+                        function_parameters:
+                            selected: 0
+            detector: null
+            tags:
+                - query
+            shadow: no
+
+        - 
+            name: Querier DB
+            state_object: QuerierState
+            querier:
+                querier_function:
+                        filepath: aux_functions.py
+                        function_name: querier_f
+            chooser:
+                filepath: Answers/QueryConversation/QUESTIONS_QUERY_DB.xml
+                chooser_object: QuerierSplitterChooser
+                type_var: level_query
+                chooser_function:
+                        filepath: aux_functions.py
+                        function_name: cond_selector
+                query_var: query_idxs
+            transition:
+                transition_object: TransitionConversationStates
+                transition_states:
+                        - Keep Trying
+                        - Explore products
+                        - Explore extra products
+                        - Closing Check
+                transition_function:
+                        filepath: aux_functions.py
+                        function_name: cond_collapser_trans
+            tags:
+                - query
+            shadow: yes
+
+        - 
+            name: Explore products
+            state_object: QuestioningState
+            chooser:
+                filepath: Answers/QueryConversation/QUESTION_EXTRA_Q.xml
+                chooser_object: SequentialChooser
+            transition:
+                transition_object: TransitionConversationStates
+                transition_states:
+                        - Querier DB
+                        - Explore extra products
+                        - Closing Check
+                transition_function:
+                        filepath: aux_functions.py
+                        function_name: cond_queries_db
+            shadow: no
+
+        - 
+            name: Explore extra products
+            state_object: QuestioningState
+            chooser:
+                filepath: Answers/QueryConversation/QUESTION_EXTRA_PRODUCTS.xml
+                chooser_object: SequentialChooser
+            transition:
+                transition_object: TransitionConversationStates
+                transition_states:
+                        - Querier DB
+                transition_function:
+                        filepath: aux_functions.py
+                        function_name: create_fixed_condition
+                        function_parameters:
+                            selected: 0
+            shadow: no
+
+        - 
+            name: Keep Trying
+            state_object: TalkingState
+            chooser:
+                filepath: Answers/QueryConversation/QUESTIONS_END_EXPLORE.xml
+                chooser_object: SequentialChooser
+            transition:
+                transition_object: TransitionConversationStates
+                transition_states:
+                        - Closing Check
+                        - Querier DB
+                transition_function:
+                        filepath: aux_functions.py
+                        function_name: yes_no_answer
+
+        - 
+            name: Closing Check
+            state_object: CheckerState
+            checker:
+                querier_function:
+                        filepath: aux_functions.py
+                        function_name: closing_check
+-
+    name: Final Asker
+    state_object: ConversationStateMachine
+    startState: Final Asker
+    endStates:
+            - Final Asker
+    transition:
+        transition_object: TransitionConversationStates
+        transition_states:
+            - Say goodbye
+            - Query Conversation
+        transition_function:
+                filepath: aux_functions.py
+                function_name: yes_no_answer
+    states:
+        -
+            name: Final Asker
+            state_object: TalkingState
+            chooser:
+                filepath: Answers/QueryConversation/QUESTIONS_END_SURE.xml
+                chooser_object: SequentialChooser
+            transition: null
+            detector: null

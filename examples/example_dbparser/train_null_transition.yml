@@ -1,0 +1,20 @@
+
+patterns: train_null_transition_patterns.yml
+preprocess_pars:
+    -
+        preprocess_text_to_features
+    -
+        null
+model_pars:
+    -
+        train_random_forest
+    -
+        parameters_cv:
+            n_splits: 10
+            test_size: 0.5
+        parameters_model:
+            n_estimators:
+                    - 10
+                    - 50
+                    - 100
+out_filepath: transitions/null_transition.pkl

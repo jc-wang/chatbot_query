@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<answer_collection>
+    <answer>
+        <level_query>4</level_query>
+        <message>I haven't found anything for you.</message>
+    </answer>
+    <answer>
+        <level_query>3</level_query>
+        <message>Are you searching for products {query_catnames}?</message>
+    </answer>
+    <answer>
+        <level_query>2</level_query>
+        <message>We have: {query_productnames}</message>
+    </answer>
+    <answer>
+        <level_query>1</level_query>
+        <message>Could be one of these products: {query_productnames}</message>
+    </answer>
+    <answer>
+        <level_query>0</level_query>
+        <message>Your interests are too general.</message>
+    </answer>
+</answer_collection>

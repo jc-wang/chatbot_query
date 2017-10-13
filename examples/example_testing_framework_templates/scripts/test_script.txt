@@ -1,0 +1,174 @@
+
+import time
+import sys
+import os
+import json
+from flask import Flask, render_template, request, jsonify, url_for, redirect
+
+from chatbotQuery.io import generate_info_reports
+from chatbotQuery.io.prepare_reports import generate_html_states_table,\
+    generate_html_transitions_table
+from chatbotQuery.ui import HandlerConvesationUI
+
+
+## Auxiliar functions
+def filter_message(messageDict):
+    filtered_fields = ["answer_status", "collection", "from", "posting_status",
+                       "sending_status", "message"]
+    answer = {}
+    for field in filtered_fields:
+        if field == "message":
+            if isinstance(messageDict['message'], list):
+                new_message = []
+                for m in messageDict['message']:
+                    if m['from'] == 'bot':
+                        new_message.append(filter_message(m))
+                answer['message'] = new_message
+            else:
+                answer['message'] = messageDict['message']
+        else:
+            if field in messageDict:
+                answer[field] = messageDict[field]
+    return answer
+
+
+def jsonify_message(messageDict):
+    ## Prepare text to show
+    if messageDict['collection']:
+        speechResponse = []
+        for m in messageDict['message']:
+            if m['from'] == 'bot':
+                speechResponse.append(str(m['message']))
+        speechResponse = str('\n'.join(speechResponse))
+    else:
+        speechResponse = str(messageDict['message'])
+    ## Filter and adapt message
+    answer = filter_message(messageDict)
+    answer['speechResponse'] = speechResponse
+    answer['status'] = 'OK'
+    return answer
+
+
+
+## App instantiation
+db_conf_file = '{db_configuration_file}'
+conv_conf_file = '{configuration_file}'
+# Parser parameters
+bot = HandlerConvesationUI.from_configuration_files(db_conf_file,
+                                                    conv_conf_file)
+app = Flask(__name__)
+
+
+## States route
+@app.route("/conversation_test")
+def conversation_test():
+    return render_template("testing_chat.html")
+
+
+# Request Handler
+@app.route('/conversation_test/api/v1', methods=['POST'])
+def conversation_test_api():
+    requestJson = request.get_json(silent=True)
+    message = str(requestJson['input'])
+    # Get message
+    if (message == "quit") or (message is None):
+        time.sleep(60)
+        exit()
+
+    if message is not None:
+        # Get and format answer
+        answer = bot.get_message({'message': message})
+        if (answer is None):
+            time.sleep(60)
+            exit()
+
+        # Send answer
+        response_obj = jsonify(jsonify_message(answer))
+        return response_obj
+    
+
+@app.route("/reset_conversation_test")
+def reset_conversation():
+    global bot
+    bot = HandlerConvesationUI.from_configuration_files(db_conf_file,
+                                                        conv_conf_file)
+    return redirect(url_for('conversation_test'))
+
+
+@app.route("/states_table")
+def states_table_view():
+    table, _, _, _, _, _ = generate_info_reports(conv_conf_file)
+    table = generate_html_states_table(table)
+    return render_template("table.html", name_title="States Table",
+                           table=table)
+
+
+@app.route("/transitions_table")
+def transition_table_view():
+    _, table, _, _, _, _ = generate_info_reports(conv_conf_file)
+    table = generate_html_transitions_table(table)
+    return render_template("table.html", name_title="Transitions table list",
+                           table=table)
+
+
+## Conversation Tree Graph
+@app.route("/conversation_tree_graph")
+def tree_graph_view():
+    return render_template("tree_graph.html")
+
+
+@app.route("/conversation_tree_graph/tree_graph.json")
+def tree_graph_json():
+    _, _, tree, _, _, _ = generate_info_reports(conv_conf_file)
+    return jsonify(tree)
+
+
+## Conversation Complete Graph
+@app.route("/conversation_complete_graph")
+def conversation_complete_graph_view():
+    return render_template("complete_graph.html")
+
+
+@app.route("/conversation_complete_graph/complete_graph.json")
+def conversation_complete_graph_json():
+    _, _, _, cg, _, _ = generate_info_reports(conv_conf_file)
+    return jsonify(cg)
+
+
+## Conversation Complete Graph
+@app.route("/conversation_statemachine_graphs")
+def conversation_graphs_view():
+    _, _, _, _, graphs, _ = generate_info_reports(conv_conf_file)
+    graphs = sorted(graphs, key=lambda x: (len(x[1].split('.')), x[0]))
+    defaultmachine = graphs[0][1]
+    statemachines = [g[1] for g in graphs[1:]]
+    return render_template("statemachine_graphs.html",
+                           defaultmachine=defaultmachine,
+                           statemachines=statemachines)
+
+
+@app.route("/conversation_statemachine_graphs/<query_sm>.json")
+def conversation_graphs_json(query_sm=None):
+    _, _, _, _, graphs, graphs_json = generate_info_reports(conv_conf_file)
+    if query_sm is None:
+        graphs = sorted(graphs, key=lambda x: (len(x[1].split('.')), x[0]))
+        query_sm = graphs[0][1]
+    if query_sm == 'graphs':
+        filtered_graph = []
+        for g in graphs_json:
+            f_graph = {}
+            f_graph['name'] = g['name']
+            f_graph['nodes'] = g['nodes']
+            f_graph['links'] = g['links']
+            filtered_graph.append(f_graph)
+    else:
+        graph = list(filter(lambda x: x['name'] == query_sm, graphs_json))[0]
+        filtered_graph = {}
+        filtered_graph['nodes'] = graph['nodes']
+        filtered_graph['links'] = graph['links']
+    return jsonify(filtered_graph)
+
+
+if __name__ == "__main__":
+    ## Run app
+    app.run(debug=True, host='0.0.0.0', port=5000)

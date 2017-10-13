@@ -1,0 +1,43 @@
+
+-
+    name: Say goodbye
+    state_object: ConversationStateMachine
+    startState: Say goodbye
+    endStates:
+            - Say goodbye
+    transition: null
+    states:
+        -
+            name: Say goodbye
+            state_object: TalkingState
+            chooser:
+                filepath: Answers/Salutations/QUESTIONS_GOODBYE.xml
+                chooser_object: SequentialChooser
+            transition: null
+            detector: null
+
+-
+    name: Hello
+    state_object: ConversationStateMachine
+    startState: Hello
+    endStates:
+            - Hello
+    transition:
+        transition_object: TransitionConversationStates
+        transition_states:
+                - Query Conversation
+        transition_function:
+                filepath: aux_functions.py
+                function_name: create_fixed_condition
+                function_parameters:
+                    selected: 0
+    states:
+        -
+            name: Hello
+            state_object: TalkingState
+            chooser:
+                filepath: Answers/Salutations/HELLO_SENTENCES.xml
+                chooser_object: SequentialChooser
+            transition: null
+            detector: null
+            shadow: yes
