@@ -67,6 +67,10 @@ class DataBaseAPI(object):
         self.responses_formatter = responses_formatter
         self.parameter_formatter = parameter_formatter
 
+    @classmethod
+    def from_parameters(cls, parameters):
+        return DataBaseAPI(**parameters)
+
     def query(self, keywords, pre=None, label=None):
         pars = self._format_parameters(keywords, pre, label)
         # TODO: Use in the future
