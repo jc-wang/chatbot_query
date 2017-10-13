@@ -37,11 +37,14 @@ if sys.argv[-1] == 'setup.py':
 version = release.write_versionfile()
 
 packages = ['chatbotQuery',
-            'chatbotQuery.conversation',
+            'chatbotQuery.ai',
             'chatbotQuery.datasets',
             'chatbotQuery.dbapi',
+            'chatbotQuery.conversation',
+            'chatbotQuery.io',
             'chatbotQuery.tests',
-            'chatbotQuery.ui']
+            'chatbotQuery.ui',
+            'chatbotQuery.ui.flask_utils']
 
 docdirbase = 'share/doc/chatbotQuery-%s' % version
 # add basic documentation
@@ -51,10 +54,10 @@ for d in ['advanced', 'algorithms']:
     dd = os.path.join(docdirbase, 'examples', d)
     pp = os.path.join('examples', d)
     data.append((dd, glob(os.path.join(pp, "*.py"))))
-    data.append((dd, glob(os.path.join(pp, "*.bz2"))))
-    data.append((dd, glob(os.path.join(pp, "*.gz"))))
-    data.append((dd, glob(os.path.join(pp, "*.mbox"))))
-    data.append((dd, glob(os.path.join(pp, "*.edgelist"))))
+#    data.append((dd, glob(os.path.join(pp, "*.bz2"))))
+#    data.append((dd, glob(os.path.join(pp, "*.gz"))))
+#    data.append((dd, glob(os.path.join(pp, "*.mbox"))))
+#    data.append((dd, glob(os.path.join(pp, "*.edgelist"))))
 
 # add the tests
 package_data = {'chatbotQuery': ['tests/*.py']
